@@ -1,0 +1,228 @@
+{
+    "staffCarouselEnabled": true,
+    "videoSource": "./videos/background.mp4",
+    "ChangelogsEnabled": true,
+    "social": {
+        "x": "",
+        "site": "",
+        "tebex": "",
+        "tiktok": "",
+        "instagram": "https://www.instagram.com/",
+        "youtube": "https://www.youtube.com",
+        "discord": "https://discord.com/vQHFXwpqqP"
+    },
+    "uiText": {
+        "hideUiLabel": "Esconder UI",
+        "backLabel": "Voltar",
+        "keybindsLabel": "Teclas",
+        "rulesLabel": "Regras",
+        "staffLabel": "Equipe",
+        "synchronizing": "Sincronizando sessao...",
+        "showUiLabel": "Mostrar UI",
+        "almostThere": "Quase la...",
+        "detectingResources": "detectando recursos",
+        "remaining": "restantes",
+        "initializing": "Inicializando servidor...",
+        "serverTeamLabel": "Equipe do servidor",
+        "noKeybind": "Nenhuma tecla atribuida",
+        "tipLabel": "DICA",
+        "preparingEntry": "Preparando entrada",
+        "resources": "recursos",
+        "initializingServer": "Inicializando servidor",
+        "changelogsLabel": "Novidades",
+        "loadingComplete": "Carregamento concluido",
+        "entryReady": "Entrada liberada",
+        "loadingResources": "Carregando recursos do servidor..."
+    },
+    "links": {
+        "rules": "#",
+        "changelogs": "#",
+        "keybinds": "#"
+    },
+    "musicVolume": 0.6,
+    "musicSourceMode": "playlist",
+    "backgroundMode": "playlist",
+    "footer": {
+        "text": "DESENVOLVIDO COM AMOR POR EQUIPE forge STUDIOS"
+    },
+    "TipEnabled": false,
+    "serverName": "forge CORE",
+    "StaffEnabled": true,
+    "keybinds": [
+        {
+            "description": "Open your in-game phone.",
+            "key": "F2",
+            "action": "Access Phone"
+        },
+        {
+            "description": "Open the quick action radial menu.",
+            "key": "F3",
+            "action": "Toggle Radial Menu"
+        },
+        {
+            "description": "Interact with the environment and NPCs.",
+            "key": "E",
+            "action": "Interact"
+        },
+        {
+            "description": "Open the main pause menu.",
+            "key": "M",
+            "action": "Open Main Menu"
+        },
+        {
+            "description": "Abre o sistema de inventário.",
+            "key": "`",
+            "action": "Inventário"
+        },
+        {
+            "description": "Descarta uma arma que voce esteja empunhando.",
+            "key": "L",
+            "action": "Descarte"
+        },
+        {
+            "description": "Coloca e remove o cinto de segurança.",
+            "key": "B",
+            "action": "Cinto de Segurança"
+        },
+        {
+            "description": "Liga e desliga motor do veiculo.",
+            "key": "Z",
+            "action": "Motor"
+        }
+    ],
+    "backgroundAudio": "separate",
+    "keys": {
+        "`": {
+            "enabled": true,
+            "info": "Abre o sistema de inventário."
+        },
+        "F3": {
+            "enabled": true,
+            "info": "Open the quick action radial menu."
+        },
+        "B": {
+            "enabled": true,
+            "info": "Coloca e remove o cinto de segurança."
+        },
+        "Z": {
+            "enabled": true,
+            "info": "Liga e desliga motor do veiculo."
+        },
+        "L": {
+            "enabled": true,
+            "info": "Descarta uma arma que voce esteja empunhando."
+        },
+        "F2": {
+            "enabled": true,
+            "info": "Open your in-game phone."
+        },
+        "E": {
+            "enabled": true,
+            "info": "Interact with the environment and NPCs."
+        },
+        "M": {
+            "enabled": true,
+            "info": "Open the main pause menu."
+        }
+    },
+    "changelogs": [
+        {
+            "version": "1.0.0",
+            "date": "2025",
+            "items": [
+                "Initial release.",
+                "Loading screen with video and music."
+            ]
+        },
+        {
+            "version": "1.1.2",
+            "date": "21/06/2026",
+            "items": [
+                "Sistema de loadingscreen flexivel.",
+                "Add menu lib para configuraçoes e modificaçoes direta na loadinscreen."
+            ]
+        }
+    ],
+    "slogan": "Forje seu legado em Los Santos",
+    "rules": [
+        "Ouça os funcionários e siga as instruções deles.",
+        "Não divulgue outros servidores nem envie spam no chat.",
+        "Siga as diretrizes de interpretação de papéis e mantenha-se no personagem quando apropriado.",
+        "É proibido trapacear, explorar falhas do jogo ou usar mods não autorizados.",
+        "Seja respeitoso com todos os jogadores e membros da equipe."
+    ],
+    "musicAutoplay": false,
+    "BrandingEnabled": true,
+    "staff": [
+        {
+            "photo": "https://files.catbox.moe/3dtqmd.gif",
+            "role": "Dev",
+            "name": "PierreMoraes"
+        },
+        {
+            "photo": "./images/staff/moderator.png",
+            "role": "Dev",
+            "name": "Spacer"
+        }
+    ],
+    "staffCarouselSeconds": 6,
+    "SocialEnabled": true,
+    "musicShuffle": false,
+    "musicShowCover": true,
+    "musicTracks": [],
+    "backgroundMedia": {
+        "rotateSeconds": 42,
+        "items": [],
+        "mode": "single",
+        "shuffle": false,
+        "enabled": true,
+        "audio": "video"
+    },
+    "videoType": "video",
+    "MusicEnabled": true,
+    "videoMuted": false,
+    "colors": {
+        "success": "#4ade80",
+        "text": "#ede9fe",
+        "textMuted": "#a5a0b8",
+        "accent": "#1f009c",
+        "bgDark": "#0f0a14",
+        "accentDim": "rgba(167, 139, 250, 0.65)",
+        "bgPanel": "rgba(0, 0, 0, 0.30)",
+        "gradientAccent": "linear-gradient(135deg, #ede9fe 0%, #59dbff 30%, #9359ff 60%, #59dbff 100%)",
+        "error": "#f87171",
+        "accentHover": "rgba(167, 139, 250, 0.15)",
+        "border": "rgba(31, 0, 156, 0.75)",
+        "bgCard": "rgba(31, 0, 156, 0.40)"
+    },
+    "communityName": "Forge Core",
+    "featureCards": [
+        {
+            "description": "Historias reais, conexoes verdadeiras.",
+            "icon": "people",
+            "title": "Roleplay leve"
+        },
+        {
+            "description": "Equipe ativa e dedicada para todos.",
+            "icon": "shield",
+            "title": "Ambiente seguro"
+        },
+        {
+            "description": "Participe, interaja e faca parte.",
+            "icon": "star",
+            "title": "Comunidade ativa"
+        }
+    ],
+    "RulesEnabled": true,
+    "brand": {
+        "mark": "P",
+        "subtitle": "Powered by forge Box Fivem Open",
+        "title": "FiveM"
+    },
+    "minimumLoadscreenSeconds": 60,
+    "tip": "Tenha paciencia por favor.....",
+    "VideoEnabled": true,
+    "tagline": "LOADING",
+    "KeybindsEnabled": true,
+    "language": "pt-BR"
+}

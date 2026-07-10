@@ -1,0 +1,45 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>forge Loadscreen</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <section class="shell">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Plugin forge Management</p>
+            <h1>Loadscreen</h1>
+          </div>
+          <div class="topbar__actions">
+            <span id="dirtyBadge" class="badge badge--muted">Sincronizado</span>
+            <button id="previewBtn" type="button" class="button button--ghost">Preview</button>
+            <button id="saveBtn" type="button" class="button button--primary">Salvar</button>
+          </div>
+        </header>
+
+        <div id="status" class="status">Carregando configuracao...</div>
+        <nav id="tabs" class="tabs" aria-label="Secoes do plugin"></nav>
+        <main id="content" class="content"></main>
+      </section>
+    </div>
+
+    <div id="modal" class="modal" hidden>
+      <div class="modal__panel">
+        <h2 id="modalTitle">Confirmar</h2>
+        <p id="modalText"></p>
+        <div class="modal__actions">
+          <button id="modalCancel" type="button" class="button button--ghost">Cancelar</button>
+          <button id="modalConfirm" type="button" class="button button--danger">Confirmar</button>
+        </div>
+      </div>
+    </div>
+    <div id="toast" class="toast" hidden></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
+
+
