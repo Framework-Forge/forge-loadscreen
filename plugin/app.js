@@ -14,6 +14,14 @@
     ['advanced', 'Avancado'],
   ];
 
+  function managementLocaleToLoadscreen(locale) {
+    const value = String(locale || 'pt-br').toLowerCase();
+    if (value === 'pt' || value === 'pt-br' || value === 'pt_br') return 'pt-BR';
+    if (value === 'en' || value === 'en-us' || value === 'en_us') return 'en-US';
+    if (value === 'es' || value === 'es-es' || value === 'es_es') return 'es-ES';
+    return 'pt-BR';
+  }
+
   const defaults = {
     BrandingEnabled: true,
     VideoEnabled: true,
@@ -222,6 +230,21 @@
     if (message.type === 'forge-plugin/init') {
       state.context = message;
       applyTheme(message.theme, message.colorMode);
+      if (state.config && message.locale) {
+        state.config.language = managementLocaleToLoadscreen(message.locale);
+        state.original = clone(state.config);
+        render();
+      }
+    }
+
+    if (message.type === 'forge-plugin/locale-changed') {
+      state.context = state.context || {};
+      state.context.locale = message.locale;
+      if (state.config) {
+        state.config.language = managementLocaleToLoadscreen(message.locale);
+        if (state.original) state.original.language = state.config.language;
+        render();
+      }
     }
 
     if (message.type === 'forge-plugin/theme-changed') {
@@ -806,6 +829,7 @@
       const result = await nui('forgeLoadscreenSaveConfig', payload);
       if (!result.ok) throw new Error(result.error || 'save_failed');
       state.config = mergeDefaults(result.data);
+      if (state.context && state.context.locale) state.config.language = managementLocaleToLoadscreen(state.context.locale);
       state.original = clone(state.config);
       setStatus('Configuracao salva e aplicada.', 'ok');
       toast('Loadscreen atualizada.');
@@ -835,6 +859,7 @@
       const result = await nui('forgeLoadscreenGetConfig', {});
       if (!result.ok) throw new Error(result.error || 'load_failed');
       state.config = mergeDefaults(result.data);
+      if (state.context && state.context.locale) state.config.language = managementLocaleToLoadscreen(state.context.locale);
       state.original = clone(state.config);
       setStatus('Configuracao carregada. Edite e salve para aplicar.', 'ok');
       render();

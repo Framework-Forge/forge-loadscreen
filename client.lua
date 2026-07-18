@@ -64,8 +64,15 @@ local function sendLoadingScreenMessage(payload)
     SendLoadingScreenMessage(json.encode(payload))
 end
 
+local function publishRuntimeConfig()
+    if type(Config) ~= "table" or not next(Config) then return end
+
+    sendLoadingScreenMessage({ action = "updateConfig", config = Config })
+    SendNUIMessage({ action = "updateConfig", config = Config })
+end
+
 local function loadRuntimeConfig()
-    if runtimeConfigLoaded then return end
+    if runtimeConfigLoaded then return true end
 
     local timeoutAt = GetGameTimer() + 5000
     while (not pr_lib or not pr_lib.callback or not pr_lib.callback.await) and GetGameTimer() < timeoutAt do
@@ -76,12 +83,18 @@ local function loadRuntimeConfig()
         local currentConfig = pr_lib.callback.await("forge-loadscreen:server:getConfig", 5000)
         if currentConfig then
             applyRuntimeConfig(currentConfig)
-            return
+            publishRuntimeConfig()
+            return true
         end
     end
 
-    runtimeConfigLoaded = true
+    return false
 end
+
+CreateThread(function()
+    Wait(0)
+    loadRuntimeConfig()
+end)
 
 local function waitForMinimumDuration()
     if minimumDurationFinished then return end
@@ -224,6 +237,7 @@ end)
 
 RegisterNetEvent("forge-loadscreen:client:setRuntimeConfig", function(newConfig)
     applyRuntimeConfig(newConfig)
+    publishRuntimeConfig()
 end)
 
 -- Function definitions
@@ -1002,7 +1016,7 @@ saveAndApplyConfig = function()
     local success, err = pr_lib.callback.await("forge-loadscreen:server:saveConfig", 5000, Config)
     if success then
         applyRuntimeConfig(Config)
-        SendNUIMessage({ action = 'updateConfig', config = Config })
+        publishRuntimeConfig()
         pr_lib.notifications.Notify({
             title = "Sucesso",
             description = "Alterações salvas e aplicadas em tempo real!",

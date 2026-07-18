@@ -1,0 +1,150 @@
+/* Fixed widths so every row aligns in a grid (main | gap | nav | gap | numpad) */
+.keyboard {
+  --key-unit: 2.75rem;
+  --key-gap: 0.3rem;
+  --row-gap: 0.45rem;
+  --block-gap: 0.15rem;
+  /* Main block: widest row is number row = 14 units + 13 gaps. Use 52rem so all rows align. */
+  --main-width: 46rem;
+  --nav-width: 11rem;
+  --numpad-width: 15.5rem;
+  width: calc(var(--main-width) + var(--nav-width) + var(--numpad-width) + (2 * var(--block-gap)));
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--row-gap);
+}
+
+@media (max-width: 1320px) {
+  .keyboard {
+    --key-unit: 2.35rem;
+    --key-gap: 0.24rem;
+    --row-gap: 0.38rem;
+    --block-gap: 0.1rem;
+    --main-width: 39rem;
+    --nav-width: 9.4rem;
+    --numpad-width: 13.2rem;
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 980px) {
+  .keyboard {
+    --key-unit: 1.95rem;
+    --key-gap: 0.18rem;
+    --row-gap: 0.3rem;
+    --main-width: 32.5rem;
+    --nav-width: 7.8rem;
+    --numpad-width: 10.9rem;
+    padding: 0.8rem;
+  }
+}
+
+
+.keyboard__row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: calc(var(--key-unit) + 0.5rem);
+  gap: 0;
+}
+
+.keyboard__block-gap {
+  flex: 0 0 var(--block-gap);
+  min-width: var(--block-gap);
+}
+
+.keyboard__segment {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--key-gap);
+}
+
+.keyboard__segment--main {
+  justify-content: flex-start;
+  flex: 0 0 var(--main-width);
+  width: var(--main-width);
+  min-width: var(--main-width);
+}
+
+.keyboard__segment--nav {
+  justify-content: center;
+  flex: 0 0 var(--nav-width);
+  width: var(--nav-width);
+  min-width: var(--nav-width);
+}
+
+.keyboard__segment--numpad {
+  justify-content: flex-start;
+  flex: 0 0 var(--numpad-width);
+  width: var(--numpad-width);
+  min-width: var(--numpad-width);
+}
+
+.keyboard__segment--empty {
+  min-width: 0 !important;
+  width: 0 !important;
+  flex: 0 0 0 !important;
+  overflow: hidden;
+}
+
+.keyboard__key {
+  --key-width: 1;
+  width: calc(var(--key-width) * var(--key-unit));
+  min-width: calc(var(--key-width) * var(--key-unit));
+  min-height: calc(var(--key-unit) + 0.25rem);
+  padding: 0.35rem 0.4rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: default;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.keyboard__key:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent-dim);
+}
+
+.keyboard__key--enabled {
+  color: var(--text);
+  background: rgba(167, 139, 250, 0.3);
+  border-color: var(--accent);
+  box-shadow: 0 0 14px rgba(167, 139, 250, 0.4);
+}
+
+.keyboard__key--enabled:hover {
+  background: rgba(167, 139, 250, 0.45);
+  border-color: var(--accent);
+  box-shadow: 0 0 18px rgba(167, 139, 250, 0.5);
+}
+
+.keyboard__key-label {
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.keyboard__key-info {
+  font-size: 0.55rem;
+  font-weight: 400;
+  opacity: 0.9;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

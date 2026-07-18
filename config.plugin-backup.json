@@ -1,152 +1,62 @@
 {
-    "staffCarouselEnabled": true,
-    "videoSource": "./videos/background.mp4",
-    "musicShowCover": true,
-    "social": {
-        "x": "",
-        "site": "",
-        "discord": "https://discord.com/vQHFXwpqqP",
-        "tiktok": "",
-        "instagram": "https://www.instagram.com/",
-        "tebex": "",
-        "youtube": "https://www.youtube.com"
-    },
-    "uiText": {
-        "hideUiLabel": "Esconder UI",
-        "entryReady": "Entrada liberada",
-        "keybindsLabel": "Teclas",
-        "rulesLabel": "Regras",
-        "staffLabel": "Equipe",
-        "synchronizing": "Sincronizando sessao...",
-        "showUiLabel": "Mostrar UI",
-        "resources": "recursos",
-        "detectingResources": "detectando recursos",
-        "remaining": "restantes",
-        "initializing": "Inicializando servidor...",
-        "noKeybind": "Nenhuma tecla atribuida",
-        "initializingServer": "Inicializando servidor",
-        "changelogsLabel": "Novidades",
-        "loadingComplete": "Carregamento concluido",
-        "almostThere": "Quase la...",
-        "preparingEntry": "Preparando entrada",
-        "serverTeamLabel": "Equipe do servidor",
-        "tipLabel": "DICA",
-        "backLabel": "Voltar",
-        "loadingResources": "Carregando recursos do servidor..."
-    },
     "staffCarouselSeconds": 6,
-    "musicVolume": 0.6,
-    "musicSourceMode": "playlist",
-    "backgroundMode": "playlist",
-    "footer": {
-        "text": "DESENVOLVIDO COM AMOR POR EQUIPE forge STUDIOS"
-    },
-    "TipEnabled": false,
-    "serverName": "forge CORE",
-    "backgroundMedia": {
-        "rotateSeconds": 42,
-        "items": [],
-        "mode": "single",
-        "shuffle": false,
-        "enabled": true,
-        "audio": "video"
-    },
-    "keys": {
-        "`": {
-            "enabled": true,
-            "info": "Abre o sistema de inventário."
-        },
-        "F3": {
-            "enabled": true,
-            "info": "Open the quick action radial menu."
-        },
-        "B": {
-            "enabled": true,
-            "info": "Coloca e remove o cinto de segurança."
-        },
-        "M": {
-            "enabled": true,
-            "info": "Open the main pause menu."
-        },
-        "L": {
-            "enabled": true,
-            "info": "Descarta uma arma que voce esteja empunhando."
-        },
-        "F2": {
-            "enabled": true,
-            "info": "Open your in-game phone."
-        },
-        "Z": {
-            "enabled": true,
-            "info": "Liga e desliga motor do veiculo."
-        },
-        "E": {
-            "enabled": true,
-            "info": "Interact with the environment and NPCs."
-        }
-    },
-    "backgroundAudio": "separate",
-    "links": {
-        "rules": "#",
-        "changelogs": "#",
-        "keybinds": "#"
-    },
-    "videoType": "video",
-    "slogan": "Forje seu legado em Los Santos",
-    "keybinds": [
+    "ChangelogsEnabled": true,
+    "language": "pt-BR",
+    "changelogs": [
         {
-            "description": "Open your in-game phone.",
-            "key": "F2",
-            "action": "Access Phone"
+            "version": "1.0.0",
+            "items": [
+                "Initial release.",
+                "Loading screen with video and music."
+            ],
+            "date": "2025"
         },
         {
-            "description": "Open the quick action radial menu.",
-            "key": "F3",
-            "action": "Toggle Radial Menu"
-        },
-        {
-            "description": "Interact with the environment and NPCs.",
-            "key": "E",
-            "action": "Interact"
-        },
-        {
-            "description": "Open the main pause menu.",
-            "key": "M",
-            "action": "Open Main Menu"
-        },
-        {
-            "description": "Abre o sistema de inventário.",
-            "key": "`",
-            "action": "Inventário"
-        },
-        {
-            "description": "Descarta uma arma que voce esteja empunhando.",
-            "key": "L",
-            "action": "Descarte"
-        },
-        {
-            "description": "Coloca e remove o cinto de segurança.",
-            "key": "B",
-            "action": "Cinto de Segurança"
-        },
-        {
-            "description": "Liga e desliga motor do veiculo.",
-            "key": "Z",
-            "action": "Motor"
+            "version": "1.1.2",
+            "items": [
+                "Sistema de loadingscreen flexivel.",
+                "Add menu lib para configuraçoes e modificaçoes direta na loadinscreen."
+            ],
+            "date": "21/06/2026"
         }
     ],
-    "musicAutoplay": false,
-    "BrandingEnabled": true,
+    "musicAutoplay": true,
+    "MusicEnabled": true,
+    "backgroundMode": "playlist",
     "staff": [
         {
-            "photo": "https://files.catbox.moe/3dtqmd.gif",
             "role": "Dev",
+            "photo": "https://files.catbox.moe/3dtqmd.gif",
             "name": "PierreMoraes"
         },
         {
-            "photo": "./images/staff/moderator.png",
             "role": "Dev",
+            "photo": "./images/staff/moderator.png",
             "name": "Spacer"
+        }
+    ],
+    "videoMuted": false,
+    "footer": {
+        "text": "DESENVOLVIDO COM AMOR POR EQUIPE forge STUDIOS"
+    },
+    "links": {
+        "keybinds": "#",
+        "rules": "#",
+        "changelogs": "#"
+    },
+    "brand": {
+        "subtitle": "Powered by forge Box Fivem Open",
+        "mark": "F",
+        "title": "F"
+    },
+    "musicTracks": [
+        {
+            "name": "Meu Pai Paga Minha Faculdade - Filho do Piseiro e Claudio Ney & Juliana (Show Completo)",
+            "artist": "",
+            "cover": "./images/music/default.png",
+            "src": "./music/music_0692WFAqRxs_20260707192804.webm",
+            "album": "",
+            "type": "audio"
         }
     ],
     "rules": [
@@ -156,73 +66,181 @@
         "É proibido trapacear, explorar falhas do jogo ou usar mods não autorizados.",
         "Seja respeitoso com todos os jogadores e membros da equipe."
     ],
+    "keybinds": [
+        {
+            "key": "F2",
+            "description": "Open your in-game phone.",
+            "action": "Access Phone"
+        },
+        {
+            "key": "F3",
+            "description": "Open the quick action radial menu.",
+            "action": "Toggle Radial Menu"
+        },
+        {
+            "key": "E",
+            "description": "Interact with the environment and NPCs.",
+            "action": "Interact"
+        },
+        {
+            "key": "M",
+            "description": "Open the main pause menu.",
+            "action": "Open Main Menu"
+        },
+        {
+            "key": "`",
+            "description": "Abre o sistema de inventário.",
+            "action": "Inventário"
+        },
+        {
+            "key": "L",
+            "description": "Descarta uma arma que voce esteja empunhando.",
+            "action": "Descarte"
+        },
+        {
+            "key": "B",
+            "description": "Coloca e remove o cinto de segurança.",
+            "action": "Cinto de Segurança"
+        },
+        {
+            "key": "Z",
+            "description": "Liga e desliga motor do veiculo.",
+            "action": "Motor"
+        }
+    ],
+    "keys": {
+        "E": {
+            "info": "Interact with the environment and NPCs.",
+            "enabled": true
+        },
+        "L": {
+            "info": "Descarta uma arma que voce esteja empunhando.",
+            "enabled": true
+        },
+        "M": {
+            "info": "Open the main pause menu.",
+            "enabled": true
+        },
+        "Z": {
+            "info": "Liga e desliga motor do veiculo.",
+            "enabled": true
+        },
+        "B": {
+            "info": "Coloca e remove o cinto de segurança.",
+            "enabled": true
+        },
+        "`": {
+            "info": "Abre o sistema de inventário.",
+            "enabled": true
+        },
+        "F2": {
+            "info": "Open your in-game phone.",
+            "enabled": true
+        },
+        "F3": {
+            "info": "Open the quick action radial menu.",
+            "enabled": true
+        }
+    },
+    "musicSourceMode": "playlist",
+    "tagline": "LOADING",
+    "uiText": {
+        "preparingEntry": "Preparando entrada",
+        "initializing": "Inicializando servidor...",
+        "serverTeamLabel": "Equipe do servidor",
+        "keybindsLabel": "Teclas",
+        "remaining": "restantes",
+        "loadingResources": "Carregando recursos do servidor...",
+        "hideUiLabel": "Esconder UI",
+        "entryReady": "Entrada liberada",
+        "loadingComplete": "Carregamento concluido",
+        "almostThere": "Quase la...",
+        "backLabel": "Voltar",
+        "rulesLabel": "Regras",
+        "changelogsLabel": "Novidades",
+        "showUiLabel": "Mostrar UI",
+        "noKeybind": "Nenhuma tecla atribuida",
+        "synchronizing": "Sincronizando sessao...",
+        "detectingResources": "detectando recursos",
+        "initializingServer": "Inicializando servidor",
+        "staffLabel": "Equipe",
+        "resources": "recursos",
+        "tipLabel": "DICA"
+    },
     "SocialEnabled": true,
-    "brand": {
-        "mark": "P",
-        "subtitle": "Powered by forge Box Fivem Open",
-        "title": "FiveM"
+    "minimumLoadscreenSeconds": 60,
+    "BrandingEnabled": true,
+    "backgroundMedia": {
+        "audio": "video",
+        "rotateSeconds": 42,
+        "enabled": true,
+        "mode": "playlist",
+        "shuffle": false,
+        "items": [
+            {
+                "duration": 42,
+                "type": "video",
+                "src": "./videos/video_0692WFAqRxs_20260707192646.mp4",
+                "muted": false,
+                "title": "Meu Pai Paga Minha Faculdade - Filho do Piseiro e Claudio Ney & Juliana (Show Completo)"
+            }
+        ]
+    },
+    "colors": {
+        "bgPanel": "rgba(0, 0, 0, 0.30)",
+        "success": "#4ade80",
+        "textMuted": "#a5a0b8",
+        "accent": "#9CF000",
+        "border": "#9CF000",
+        "gradientAccent": "linear-gradient(135deg, #ede9fe 0%, #59dbff 30%, #9359ff 60%, #59dbff 100%)",
+        "accentDim": "rgba(156, 240, 0, 0.65)",
+        "text": "#ede9fe",
+        "bgCard": "rgba(156, 240, 0, 0.40)",
+        "error": "#f87171",
+        "bgDark": "#0f0a14",
+        "accentHover": "rgba(156, 240, 0, 0.15)"
     },
     "StaffEnabled": true,
-    "language": "pt-BR",
+    "musicShowCover": true,
+    "TipEnabled": false,
+    "musicVolume": 0.6,
+    "backgroundAudio": "separate",
+    "staffCarouselEnabled": true,
+    "musicShuffle": false,
+    "logoUrl": "https://media.discordapp.net/attachments/1519893174330458243/1520423861525545020/image.png?ex=6a4d0210&is=6a4bb090&hm=0181377eac3e6f9eb9111602be83f2828cdb6c079f7f9f3922ab79fcca727f44&=&format=webp&quality=lossless&width=856&height=856",
+    "tip": "Tenha paciencia por favor.....",
+    "videoType": "video",
+    "videoSource": "./videos/video_0692WFAqRxs_20260707192646.mp4",
+    "slogan": "Forje seu legado em Los Santos",
     "featureCards": [
         {
-            "description": "Historias reais, conexoes verdadeiras.",
             "icon": "people",
+            "description": "Historias reais, conexoes verdadeiras.",
             "title": "Roleplay leve"
         },
         {
-            "description": "Equipe ativa e dedicada para todos.",
             "icon": "shield",
+            "description": "Equipe ativa e dedicada para todos.",
             "title": "Ambiente seguro"
         },
         {
-            "description": "Participe, interaja e faca parte.",
             "icon": "star",
+            "description": "Participe, interaja e faca parte.",
             "title": "Comunidade ativa"
         }
     ],
-    "changelogs": [
-        {
-            "date": "2025",
-            "version": "1.0.0",
-            "items": [
-                "Initial release.",
-                "Loading screen with video and music."
-            ]
-        },
-        {
-            "date": "21/06/2026",
-            "version": "1.1.2",
-            "items": [
-                "Sistema de loadingscreen flexivel.",
-                "Add menu lib para configuraçoes e modificaçoes direta na loadinscreen."
-            ]
-        }
-    ],
-    "MusicEnabled": true,
-    "musicShuffle": false,
-    "colors": {
-        "success": "#4ade80",
-        "text": "#ede9fe",
-        "textMuted": "#a5a0b8",
-        "accent": "#1f009c",
-        "bgDark": "#0f0a14",
-        "accentDim": "rgba(167, 139, 250, 0.65)",
-        "bgPanel": "rgba(0, 0, 0, 0.30)",
-        "gradientAccent": "linear-gradient(135deg, #ede9fe 0%, #59dbff 30%, #9359ff 60%, #59dbff 100%)",
-        "error": "#f87171",
-        "accentHover": "rgba(167, 139, 250, 0.15)",
-        "border": "rgba(31, 0, 156, 0.75)",
-        "bgCard": "rgba(31, 0, 156, 0.40)"
-    },
-    "communityName": "Forge Core",
-    "musicTracks": [],
-    "minimumLoadscreenSeconds": 60,
-    "videoMuted": false,
-    "tagline": "LOADING",
-    "ChangelogsEnabled": true,
-    "VideoEnabled": true,
-    "tip": "Tenha paciencia por favor.....",
+    "serverName": "FORGE BOX",
     "KeybindsEnabled": true,
-    "RulesEnabled": true
+    "communityName": "Forge Core",
+    "VideoEnabled": true,
+    "RulesEnabled": true,
+    "social": {
+        "x": "",
+        "tebex": "",
+        "instagram": "https://www.instagram.com/",
+        "site": "",
+        "tiktok": "",
+        "discord": "https://discord.com/vQHFXwpqqP",
+        "youtube": "https://www.youtube.com"
+    }
 }

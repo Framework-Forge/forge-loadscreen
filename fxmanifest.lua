@@ -12,7 +12,7 @@ shared_scripts {
 
 name 'forge-loadscreen'
 description 'forge Loading Screen'
-author 'forge loadscreen'
+author 'forge devs - Spacer dev / PierreMoraes'
 version '1.0.0'
 
 -- Load server script that sends config to the loading screen

@@ -70,7 +70,7 @@ if (Test-Path -LiteralPath $videoOut) {
     Write-Host "      Arquivo ja existe: $videoOut" -ForegroundColor Green
     Write-Host "      Para re-baixar, delete o arquivo e execute novamente." -ForegroundColor Gray
 } else {
-    & $ytdlp --format "18" --output $videoOut $videoUrl
+    & $ytdlp --format "22/best[height<=720][ext=mp4]/best" --output $videoOut $videoUrl
     if (Test-Path -LiteralPath $videoOut) {
         Write-Host "      [OK] Video salvo em: $videoOut" -ForegroundColor Green
     } else {

@@ -349,6 +349,7 @@ local function sanitizeConfig(input, current)
         tagline = cleanString(input.tagline, current.tagline or 'LOADING', 40),
         tip = cleanString(input.tip, current.tip or '', 180),
         minimumLoadscreenSeconds = cleanNumber(input.minimumLoadscreenSeconds, current.minimumLoadscreenSeconds or 0, 0, 900),
+        logoUrl = cleanPath(input.logoUrl, current.logoUrl or '', 260),
 
         colors = cleanColors(input.colors, current.colors),
         social = cleanSocial(input.social),
@@ -705,8 +706,50 @@ CreateThread(function()
         return canManage(source)
     end)
 
+    pr_lib.callback.register('forge-loadscreen:server:management:load', function(source)
+        if not canManage(source) then return false, 'no_permission' end
+        local config, err = readConfig()
+        if not config then return false, err end
+        return true, config
+    end)
+
+    pr_lib.callback.register('forge-loadscreen:server:management:action', function(source, module, action, payload)
+        if not canManage(source) then return false, 'no_permission' end
+        if action ~= 'save' then return false, 'invalid_action' end
+
+        local now = os.time()
+        if writeCooldown[source] and now - writeCooldown[source] < 2 then
+            return false, 'rate_limited'
+        end
+        writeCooldown[source] = now
+
+        return saveConfig(source, payload)
+    end)
+
 end)
 
+local function managementLocaleToLoadscreen(locale)
+    locale = tostring(locale or 'pt-br'):lower()
+    if locale == 'pt' or locale == 'pt-br' or locale == 'pt_br' or locale == 'pt-brasil' then return 'pt-BR' end
+    if locale == 'en' or locale == 'en-us' or locale == 'en_us' then return 'en-US' end
+    if locale == 'es' or locale == 'es-es' or locale == 'es_es' then return 'es-ES' end
+    return 'pt-BR'
+end
+local function loadscreenLocaleText(language)
+    if language == 'en-US' then
+        return {
+            tipLabel = 'TIP', rulesLabel = 'Rules', changelogsLabel = 'Changelogs', keybindsLabel = 'Keys', staffLabel = 'Staff', serverTeamLabel = 'Server team', backLabel = 'Back', preparingEntry = 'Preparing entry', entryReady = 'Entry ready', loadingComplete = 'Loading complete', almostThere = 'Almost there...', loadingResources = 'Loading server resources...', initializing = 'Initializing server...', initializingServer = 'Initializing server', synchronizing = 'Synchronizing session...', detectingResources = 'detecting resources', resources = 'resources', remaining = 'remaining', noKeybind = 'No key assigned', hideUiLabel = 'Hide UI', showUiLabel = 'Show UI'
+        }
+    elseif language == 'es-ES' then
+        return {
+            tipLabel = 'CONSEJO', rulesLabel = 'Reglas', changelogsLabel = 'Novedades', keybindsLabel = 'Teclas', staffLabel = 'Equipo', serverTeamLabel = 'Equipo del servidor', backLabel = 'Volver', preparingEntry = 'Preparando entrada', entryReady = 'Entrada liberada', loadingComplete = 'Carga completada', almostThere = 'Casi listo...', loadingResources = 'Cargando recursos del servidor...', initializing = 'Inicializando servidor...', initializingServer = 'Inicializando servidor', synchronizing = 'Sincronizando sesion...', detectingResources = 'detectando recursos', resources = 'recursos', remaining = 'restantes', noKeybind = 'Ninguna tecla asignada', hideUiLabel = 'Ocultar UI', showUiLabel = 'Mostrar UI'
+        }
+    end
+
+    return {
+        tipLabel = 'DICA', rulesLabel = 'Regras', changelogsLabel = 'Novidades', keybindsLabel = 'Teclas', staffLabel = 'Equipe', serverTeamLabel = 'Equipe do servidor', backLabel = 'Voltar', preparingEntry = 'Preparando entrada', entryReady = 'Entrada liberada', loadingComplete = 'Carregamento concluido', almostThere = 'Quase la...', loadingResources = 'Carregando recursos do servidor...', initializing = 'Inicializando servidor...', initializingServer = 'Inicializando servidor', synchronizing = 'Sincronizando sessao...', detectingResources = 'detectando recursos', resources = 'recursos', remaining = 'restantes', noKeybind = 'Nenhuma tecla atribuida', hideUiLabel = 'Esconder UI', showUiLabel = 'Mostrar UI'
+    }
+end
 local function registerforgePlugin()
     if GetResourceState('forge-management') ~= 'started' then return end
 
@@ -714,20 +757,60 @@ local function registerforgePlugin()
         id = 'forge-loadscreen',
         label = 'Loadscreen',
         icon = 'monitor-play',
-        resource = GetCurrentResourceName(),
-        htmlPath = 'plugin/index.html',
         requiredPerms = {},
-        capabilities = { 'theme', 'close', 'health', 'read', 'write' },
+        capabilities = { 'read', 'write', 'health' },
         minProtocolVersion = 2,
         category = 'visual',
         order = 20,
         description = 'Configura videos, musicas, cores, textos e staff da loadscreen.',
         version = GetResourceMetadata(GetCurrentResourceName(), 'version', 0) or '1.0.0',
+        native = {
+            module = 'config',
+            load = 'forge-loadscreen:server:management:load',
+            action = 'forge-loadscreen:server:management:action',
+            actions = {
+                save = 'Salvar configuracao',
+            },
+            fields = {
+                { path = 'communityName', type = 'text', label = 'Texto superior', action = 'save' },
+                { path = 'serverName', type = 'text', label = 'Logo principal / titulo', action = 'save' },
+                { path = 'logoUrl', type = 'text', label = 'Link da Logo (URL)', action = 'save' },
+                { path = 'slogan', type = 'text', label = 'Slogan', action = 'save' },
+                { path = 'tagline', type = 'text', label = 'Tagline', action = 'save' },
+                { path = 'minimumLoadscreenSeconds', type = 'number', label = 'Tempo minimo em segundos', min = 0, max = 900, step = 1, action = 'save' },
+                { path = 'BrandingEnabled', type = 'boolean', label = 'Branding ativo', action = 'save' },
+                { path = 'VideoEnabled', type = 'boolean', label = 'Video ativo', action = 'save' },
+                { path = 'MusicEnabled', type = 'boolean', label = 'Musica ativa', action = 'save' },
+                { path = 'TipEnabled', type = 'boolean', label = 'Dica ativa', action = 'save' },
+                { path = 'RulesEnabled', type = 'boolean', label = 'Regras ativas', action = 'save' },
+                { path = 'ChangelogsEnabled', type = 'boolean', label = 'Novidades ativas', action = 'save' },
+                { path = 'KeybindsEnabled', type = 'boolean', label = 'Teclas ativas', action = 'save' },
+                { path = 'StaffEnabled', type = 'boolean', label = 'Staff ativo', action = 'save' },
+                { path = 'SocialEnabled', type = 'boolean', label = 'Redes sociais ativas', action = 'save' },
+                { path = 'musicVolume', type = 'number', label = 'Volume da musica', min = 0, max = 1, step = 0.05, action = 'save' },
+                { path = 'musicAutoplay', type = 'boolean', label = 'Musica autoplay', action = 'save' },
+                { path = 'musicShuffle', type = 'boolean', label = 'Musica aleatoria', action = 'save' },
+                { path = 'staffCarouselEnabled', type = 'boolean', label = 'Carrossel de staff', action = 'save' },
+                { path = 'staffCarouselSeconds', type = 'number', label = 'Tempo do carrossel staff', min = 3, max = 60, step = 1, action = 'save' },
+                { path = 'tip', type = 'textarea', label = 'Dica principal', action = 'save' },
+                { path = 'colors', type = 'json', label = 'Cores', description = 'Objeto JSON com as cores da loadscreen.', action = 'save' },
+                { path = 'backgroundMedia', type = 'json', label = 'Videos de fundo', description = 'Objeto JSON com playlist, modo e itens de video.', action = 'save' },
+                { path = 'musicTracks', type = 'json', label = 'Musicas', description = 'Lista JSON de musicas.', action = 'save' },
+                { path = 'staff', type = 'json', label = 'Equipe', description = 'Lista JSON de membros da equipe.', action = 'save' },
+                { path = 'featureCards', type = 'json', label = 'Cards de destaque', description = 'Lista JSON com os tres cards do topo.', action = 'save' },
+                { path = 'rules', type = 'json', label = 'Regras', description = 'Lista JSON de regras.', action = 'save' },
+                { path = 'changelogs', type = 'json', label = 'Novidades', description = 'Lista JSON de changelogs.', action = 'save' },
+                { path = 'keybinds', type = 'json', label = 'Teclas', description = 'Lista JSON de atalhos.', action = 'save' },
+                { path = 'social', type = 'json', label = 'Redes sociais', description = 'Objeto JSON com links sociais.', action = 'save' },
+                { path = 'links', type = 'json', label = 'Links rapidos', description = 'Objeto JSON com links de regras, novidades e teclas.', action = 'save' },
+                { path = 'uiText', type = 'json', label = 'Textos da interface', description = 'Objeto JSON com labels exibidas na loadscreen.', action = 'save' },
+            },
+        },
     })
 
     if not ok then
         print(('[forge-loadscreen] Plugin do forge Management rejeitado: %s'):format(reason or 'desconhecido'))
-    else
+    elseif reason ~= 'unchanged' then
         print('[forge-loadscreen] Plugin registrado no forge Management')
     end
 end
@@ -746,6 +829,34 @@ AddEventHandler('onResourceStop', function(resourceName)
             exports['forge-management']:UnregisterPlugin('forge-loadscreen')
         end)
     end
+end)
+
+
+AddEventHandler('forge-management:server:localeUpdated', function(locale)
+    local config = readConfig()
+    if type(config) ~= 'table' then return end
+    config.language = managementLocaleToLoadscreen(locale)
+    config.uiText = loadscreenLocaleText(config.language)
+    saveConfig(0, config)
+end)
+AddEventHandler('forge-management:server:themeUpdated', function(theme)
+    if type(theme) ~= 'table' or not theme.accentColor then return end
+    local config, err = readConfig()
+    if not config then return end
+    
+    config.colors = config.colors or {}
+    config.colors.accent = theme.accentColor
+    config.colors.border = theme.accentColor
+    
+    local r = tonumber(theme.accentColor:sub(2,3), 16) or 255
+    local g = tonumber(theme.accentColor:sub(4,5), 16) or 122
+    local b = tonumber(theme.accentColor:sub(6,7), 16) or 26
+    
+    config.colors.accentHover = ('rgba(%d, %d, %d, 0.15)'):format(r, g, b)
+    config.colors.accentDim = ('rgba(%d, %d, %d, 0.65)'):format(r, g, b)
+    config.colors.bgCard = ('rgba(%d, %d, %d, 0.40)'):format(r, g, b)
+
+    saveConfig(0, config)
 end)
 
 

@@ -23,6 +23,15 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--forge-primary) rgba(255, 255, 255, 0.06);
+}
+
+html {
+  min-height: 100%;
+  background: var(--forge-background);
+  scrollbar-width: thin;
+  scrollbar-color: var(--forge-primary) rgba(255, 255, 255, 0.06);
 }
 
 body {
@@ -31,6 +40,27 @@ body {
   color: var(--forge-foreground);
   background: var(--forge-background);
   font-family: "Segoe UI", Arial, sans-serif;
+  overflow-y: auto;
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid var(--forge-background);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--forge-primary-bright), var(--forge-primary));
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--forge-primary-bright);
 }
 
 button,
@@ -42,6 +72,10 @@ textarea {
 
 button {
   cursor: pointer;
+}
+
+#app {
+  min-height: 100vh;
 }
 
 .shell {
@@ -77,7 +111,7 @@ h3,
 h1 {
   margin: 0;
   font-size: 48px;
-  line-height: 0.9;
+  line-height: 1.08;
 }
 
 h2 {

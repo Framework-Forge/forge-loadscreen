@@ -109,6 +109,29 @@ local function copyConfigWithRuntimeData(src)
         runtimeConfig[key] = value
     end
 
+    -- Injetar cores do forge-management
+    if GetResourceState('forge-management') == 'started' then
+        local ok, theme = pcall(function()
+            return exports['forge-management']:GetTheme()
+        end)
+        if ok and theme and theme.accentColor then
+            if not runtimeConfig.colors then runtimeConfig.colors = {} end
+            runtimeConfig.colors.accent = theme.accentColor
+            runtimeConfig.colors.accentDim = theme.accentColor .. "a6"
+            runtimeConfig.colors.accentHover = theme.accentColor .. "26"
+            runtimeConfig.colors.border = theme.accentColor .. "59"
+
+            local bright = theme.accentBright or "#ffffff"
+            local deep = theme.accentDeep or "#000000"
+            runtimeConfig.colors.gradientAccent = ("linear-gradient(135deg, %s 0%%, %s 50%%, %s 100%%)"):format(bright, theme.accentColor, deep)
+        end
+    end
+
+    if runtimeConfig.logoUrl then
+        if not runtimeConfig.brand then runtimeConfig.brand = {} end
+        runtimeConfig.brand.logo = runtimeConfig.logoUrl
+    end
+
     local startedAt = src and connectionStartedAt[src]
     runtimeConfig.serverResourceCount = countStartedResources()
     runtimeConfig.loadingElapsedMs = startedAt and math.max(0, nowMs() - startedAt) or 0
