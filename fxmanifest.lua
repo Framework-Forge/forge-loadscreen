@@ -1,12 +1,10 @@
 fx_version 'cerulean'
 game 'gta5'
 
-dependency 'ox_lib'
 dependency 'pr_bridge'
-dependency 'forge-management'
+--dependency 'forge-management'
 
 shared_scripts {
-  '@ox_lib/init.lua',
   '@pr_bridge/init.lua',
 }
 
