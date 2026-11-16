@@ -30,6 +30,7 @@ local function logError(message)
 end
 
 local function hasConfigPermission(src)
+    if ForgeLoadscreenConfigService then return ForgeLoadscreenConfigService.CanManage(src) end
     if src == 0 then return true end
     return IsPlayerAceAllowed(src, "forge-loadscreen.admin")
         or IsPlayerAceAllowed(src, "forge-management.admin")
@@ -101,6 +102,38 @@ local function stripRuntimeData(config)
     return config
 end
 
+local function themeHex(value, fallback)
+    return type(value) == 'string' and value:match('^#%x%x%x%x%x%x$') and value or fallback
+end
+
+function ForgeLoadscreenConfigWithTheme(config, theme)
+    if config.followGlobalTheme == false or GetResourceState('forge-management') ~= 'started' then return config end
+    if type(theme) ~= 'table' then
+        local ok, result = pcall(function() return exports['forge-management']:GetTheme() end)
+        if not ok or type(result) ~= 'table' then return config end
+        theme = result
+    end
+
+    local accent = themeHex(theme.accentColor)
+    if not accent then return config end
+
+    local runtimeConfig, colors = {}, {}
+    for key, value in pairs(config) do runtimeConfig[key] = value end
+    for key, value in pairs(config.colors or {}) do colors[key] = value end
+    local r = tonumber(accent:sub(2, 3), 16)
+    local g = tonumber(accent:sub(4, 5), 16)
+    local b = tonumber(accent:sub(6, 7), 16)
+    colors.accent = accent
+    colors.accentDim = ('rgba(%d, %d, %d, 0.65)'):format(r, g, b)
+    colors.accentHover = ('rgba(%d, %d, %d, 0.15)'):format(r, g, b)
+    colors.border = ('rgba(%d, %d, %d, 0.48)'):format(r, g, b)
+    colors.gradientAccent = ('linear-gradient(135deg, %s 0%%, %s 65%%, %s 100%%)'):format(
+        themeHex(theme.accentBright, '#ffffff'), accent, themeHex(theme.accentDeep, accent)
+    )
+    runtimeConfig.colors = colors
+    return runtimeConfig
+end
+
 local function copyConfigWithRuntimeData(src)
     loadSavedConfig(true)
 
@@ -108,28 +141,13 @@ local function copyConfigWithRuntimeData(src)
     for key, value in pairs(Config or {}) do
         runtimeConfig[key] = value
     end
-
-    -- Injetar cores do forge-management
-    if GetResourceState('forge-management') == 'started' then
-        local ok, theme = pcall(function()
-            return exports['forge-management']:GetTheme()
-        end)
-        if ok and theme and theme.accentColor then
-            if not runtimeConfig.colors then runtimeConfig.colors = {} end
-            runtimeConfig.colors.accent = theme.accentColor
-            runtimeConfig.colors.accentDim = theme.accentColor .. "a6"
-            runtimeConfig.colors.accentHover = theme.accentColor .. "26"
-            runtimeConfig.colors.border = theme.accentColor .. "59"
-
-            local bright = theme.accentBright or "#ffffff"
-            local deep = theme.accentDeep or "#000000"
-            runtimeConfig.colors.gradientAccent = ("linear-gradient(135deg, %s 0%%, %s 50%%, %s 100%%)"):format(bright, theme.accentColor, deep)
-        end
-    end
+    runtimeConfig = ForgeLoadscreenConfigWithTheme(runtimeConfig)
 
     if runtimeConfig.logoUrl then
-        if not runtimeConfig.brand then runtimeConfig.brand = {} end
-        runtimeConfig.brand.logo = runtimeConfig.logoUrl
+        local brand = {}
+        for key, value in pairs(runtimeConfig.brand or {}) do brand[key] = value end
+        brand.logo = runtimeConfig.logoUrl
+        runtimeConfig.brand = brand
     end
 
     local startedAt = src and connectionStartedAt[src]
@@ -147,7 +165,15 @@ CreateThread(function()
     loadSavedConfig()
 
     if pr_lib.callback and pr_lib.callback.register then
-        pr_lib.callback.register("forge-loadscreen:server:getConfig", function(src)
+        pr_lib.callback.register("forge-loadscreen:server:canManage", function(src)
+            return hasConfigPermission(src)
+        end)
+        pr_lib.callback.register("forge-loadscreen:server:getConfig", function(src, adminDraft)
+            if adminDraft == true then
+                if not hasConfigPermission(src) then return nil, 'no_permission' end
+                loadSavedConfig(true)
+                return Config
+            end
             return copyConfigWithRuntimeData(src)
         end)
 
@@ -162,18 +188,8 @@ CreateThread(function()
                 return false
             end
 
-            Config = stripRuntimeData(newConfig)
-
-            local savedString = json.encode(Config, { indent = true })
-            local success = SaveResourceFile(GetCurrentResourceName(), "config.json", savedString, -1)
-
-            if success then
-                logSuccess(("[forge-loadscreen] Configuracoes salvas e aplicadas por ID %s"):format(src))
-                return true
-            end
-
-            logError("[forge-loadscreen] Falha ao salvar as configuracoes em config.json")
-            return false
+            if not ForgeLoadscreenConfigService then return false, 'config_service_unavailable' end
+            return ForgeLoadscreenConfigService.Save(src, newConfig)
         end)
     else
         logError("[forge-loadscreen] pr_lib.callback nao esta disponivel!")
@@ -181,7 +197,7 @@ CreateThread(function()
 
     if pr_lib.addCommand then
         pr_lib.addCommand("adminloadscreen", {
-            help = "Abre o menu de configuracao da tela de carregamento",
+            help = "Abre o editor visual da tela de carregamento",
             -- groups = { "admin", "god" }
         }, function(source)
             if source == 0 then
@@ -195,6 +211,14 @@ CreateThread(function()
             end
 
             TriggerClientEvent("forge-loadscreen:client:openAdminMenu", source)
+        end)
+
+        pr_lib.addCommand("adminloadscreenmenu", {
+            help = "Abre o menu clássico da tela de carregamento"
+        }, function(source)
+            if source ~= 0 and hasConfigPermission(source) then
+                TriggerClientEvent("forge-loadscreen:client:openAdminMenu", source, false, false, true)
+            end
         end)
 
         pr_lib.addCommand("previewloadscreen", {

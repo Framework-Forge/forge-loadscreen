@@ -10,7 +10,7 @@ Uma tela de carregamento avançada, moderna e totalmente configurável em tempo 
 *   **🎵 Widget de Música Adaptativo:**
     *   Exibe controle completo (Play, Pause, Próxima, Anterior) se faixas locais `.mp3` estiverem ativas.
     *   Exibe apenas o controle deslizante de volume se estiver tocando o áudio nativo de um vídeo do YouTube de fundo.
-*   **🎨 Personalização de Cores e Aparência:** Ajuste em tempo real de cores de fundo, cartões, bordas (com seletores de cor hex) e opacidades individuais (via sliders) com atualização imediata via variáveis CSS.
+*   **🎨 Personalização de Cores e Aparência:** Paletas para cores de fundo, cartões, bordas e degradê, com controles deslizantes de opacidade e posição. A prévia mostra o rascunho; somente **Salvar e aplicar** persiste as alterações.
 *   **⌨️ Teclado 100% Interativo & Legenda de Teclas:** Visualização em tempo real de atalhos em um teclado interativo completo acompanhado de uma lista/legenda detalhada dos comandos configurados.
 *   **👥 Slider de Staff Moderno:** Exibição elegante dos membros da administração com fotos, cargos e nomes.
 *   **📜 Regras e Changelogs:** Seções dedicadas em formato modal para regras do servidor e histórico de atualizações ordenado por versão.
@@ -23,11 +23,13 @@ Uma tela de carregamento avançada, moderna e totalmente configurável em tempo 
 O script oferece controle total in-game sem necessidade de editar arquivos manuais ou reiniciar recursos:
 
 1.  **`/adminloadscreen`**
-    *   Abre o menu de configuração completo (utiliza `ox_lib`).
+    *   Abre o menu de configuração por categorias com `pr_lib.menu.RegisterContext`, nativo do PR Bridge.
     *   Permite habilitar/desabilitar seções (Ativar/Desativar Música, Staff, Regras, etc.).
     *   Edição de textos de Branding (Nome da comunidade, Slogan) e dicas na tela.
-    *   **CRUD Dinâmico (Criar, Editar e Apagar quantos desejar):** Cadastre livremente novas **Regras**, versões de **Change Log**, membros de **Staff** e novos **Keybinds** com legendas personalizadas.
+    *   **Listas individuais:** Adicione, edite, ordene e remova músicas, vídeos, regras, versões e suas linhas de novidades, membros da equipe, teclas e cartões, respeitando os limites de segurança do servidor.
+    *   **Pré-visualizar rascunho / Descartar alterações:** Teste sem gravar e retorne ao menu; descarte somente após confirmação.
     *   **Salvar e Aplicar:** Escreve instantaneamente no arquivo `config.json` do servidor e propaga em tempo real para a NUI.
+    *   Guia completo do novo editor: [ADMIN_MENU.md](ADMIN_MENU.md).
 2.  **`/previewloadscreen`**
     *   Abre a tela de carregamento sobreposta ao jogo para testes.
     *   Excelente para depurar novas cores, vídeos e atalhos.
@@ -70,7 +72,7 @@ Gifs: https://files.catbox.moe/3dtqmd.gif
 
 ## ⏱️ Sistema de Cronômetro & Tempo Mínimo de Exibição
 
-O script permite configurar um tempo mínimo de carregamento em segundos (ex: para garantir que os players leiam as regras ou assistam ao vídeo de introdução completo). Esse tempo pode ser ajustado diretamente no menu in-game `/adminloadscreen` em **"Tempo Minimo de Loading"**.
+O script permite configurar um tempo mínimo de carregamento em segundos (ex: para garantir que os players leiam as regras ou assistam ao vídeo de introdução completo). Esse tempo pode ser ajustado diretamente no menu in-game `/adminloadscreen` em **"Tempo mínimo de carregamento"**. O controle deslizante permite de 0 a 900 segundos; 0 desativa a espera obrigatória. O valor é o tempo mínimo total: se o jogo ficar pronto em 15 segundos e o mínimo for 180, aguarda os 165 segundos restantes.
 
 ### Integração no Multicharacter ou Core (ex: qbx_core / qb-core)
 

@@ -1,91 +1,71 @@
 {
-    "staffCarouselSeconds": 6,
-    "ChangelogsEnabled": true,
     "KeybindsEnabled": true,
-    "changelogs": [
-        {
-            "version": "1.0.0",
-            "items": [
-                "Initial release.",
-                "Loading screen with video and music."
-            ],
-            "date": "2025"
-        },
-        {
-            "version": "1.1.2",
-            "items": [
-                "Sistema de loadingscreen flexivel.",
-                "Add menu lib para configuraçoes e modificaçoes direta na loadinscreen."
-            ],
-            "date": "21/06/2026"
-        }
-    ],
-    "musicAutoplay": true,
-    "MusicEnabled": true,
-    "backgroundMode": "playlist",
-    "staff": [
-        {
-            "name": "PierreMoraes",
-            "photo": "https://files.catbox.moe/3dtqmd.gif",
-            "role": "Dev"
-        },
-        {
-            "name": "Spacer",
-            "photo": "./images/staff/moderator.png",
-            "role": "Dev"
-        }
-    ],
-    "videoMuted": false,
-    "footer": {
-        "text": "DESENVOLVIDO COM AMOR POR EQUIPE forge STUDIOS"
+    "colors": {
+        "border": "#ff7a1a",
+        "bgCard": "rgba(255, 122, 26, 0.40)",
+        "bgDark": "#0f0a14",
+        "textMuted": "#a5a0b8",
+        "accentDim": "rgba(255, 122, 26, 0.65)",
+        "text": "#ede9fe",
+        "bgPanel": "rgba(0, 0, 0, 0.30)",
+        "accentHover": "rgba(255, 122, 26, 0.15)",
+        "gradientAccent": "linear-gradient(135deg, #ede9fe 0%, #59dbff 30%, #9359ff 60%, #59dbff 100%)",
+        "error": "#f87171",
+        "success": "#4ade80",
+        "accent": "#ff7a1a"
     },
-    "links": {
-        "keybinds": "#",
-        "changelogs": "#",
-        "rules": "#"
-    },
-    "brand": {
-        "subtitle": "Powered by forge Box Fivem Open",
-        "mark": "F",
-        "title": "F"
-    },
-    "musicTracks": [
-        {
-            "name": "Meu Pai Paga Minha Faculdade - Filho do Piseiro e Claudio Ney & Juliana (Show Co",
-            "artist": "",
-            "cover": "./images/music/default.png",
-            "src": "./music/music_0692WFAqRxs_20260707192804.webm",
-            "album": "",
-            "type": "audio"
-        }
-    ],
-    "rules": [
-        "Ouça os funcionários e siga as instruções deles.",
-        "Não divulgue outros servidores nem envie spam no chat.",
-        "Siga as diretrizes de interpretação de papéis e mantenha-se no personagem quando apropriado.",
-        "É proibido trapacear, explorar falhas do jogo ou usar mods não autorizados.",
-        "Seja respeitoso com todos os jogadores e membros da equipe."
-    ],
+    "serverName": "FORGE PROJECT",
+    "language": "pt-BR",
+    "musicSourceMode": "playlist",
     "slogan": "Forje seu legado em Los Santos",
+    "VideoEnabled": true,
+    "backgroundAudio": "video",
+    "StaffEnabled": true,
+    "brand": {
+        "subtitle": "by Forge Project ",
+        "mark": "",
+        "title": ""
+    },
+    "palettePreset": "",
+    "backgroundMode": "playlist",
+    "BrandingEnabled": false,
+    "followGlobalTheme": true,
+    "featureCards": [
+        {
+            "description": "Historias reais, conexoes verdadeiras.",
+            "icon": "people",
+            "title": "Roleplay leve"
+        },
+        {
+            "description": "Equipe ativa e dedicada para todos.",
+            "icon": "shield",
+            "title": "Ambiente seguro"
+        },
+        {
+            "description": "Participe, interaja e faca parte.",
+            "icon": "star",
+            "title": "Comunidade ativa"
+        }
+    ],
+    "RulesEnabled": true,
+    "textVisibility": [],
+    "social": {
+        "tebex": "",
+        "tiktok": "",
+        "youtube": "https://www.youtube.com",
+        "site": "",
+        "discord": "https://discord.com/vQHFXwpqqP",
+        "x": "",
+        "instagram": "https://www.instagram.com/"
+    },
+    "tip": "Tenha paciencia por favor.....",
     "keys": {
         "E": {
             "info": "Interact with the environment and NPCs.",
             "enabled": true
         },
-        "L": {
-            "info": "Descarta uma arma que voce esteja empunhando.",
-            "enabled": true
-        },
         "Z": {
             "info": "Liga e desliga motor do veiculo.",
-            "enabled": true
-        },
-        "B": {
-            "info": "Coloca e remove o cinto de segurança.",
-            "enabled": true
-        },
-        "M": {
-            "info": "Open the main pause menu.",
             "enabled": true
         },
         "`": {
@@ -96,151 +76,290 @@
             "info": "Open your in-game phone.",
             "enabled": true
         },
+        "B": {
+            "info": "Coloca e remove o cinto de segurança.",
+            "enabled": true
+        },
         "F3": {
             "info": "Open the quick action radial menu.",
             "enabled": true
+        },
+        "L": {
+            "info": "Descarta uma arma que voce esteja empunhando.",
+            "enabled": true
+        },
+        "M": {
+            "info": "Open the main pause menu.",
+            "enabled": true
         }
     },
-    "musicSourceMode": "playlist",
-    "tagline": "LOADING",
-    "uiText": {
-        "preparingEntry": "Preparando entrada",
-        "initializing": "Inicializando servidor...",
-        "serverTeamLabel": "Equipe do servidor",
-        "keybindsLabel": "Teclas",
-        "remaining": "restantes",
-        "loadingResources": "Carregando recursos do servidor...",
-        "showUiLabel": "Mostrar UI",
-        "tipLabel": "DICA",
-        "loadingComplete": "Carregamento concluido",
-        "changelogsLabel": "Novidades",
-        "backLabel": "Voltar",
-        "rulesLabel": "Regras",
-        "hideUiLabel": "Esconder UI",
-        "almostThere": "Quase la...",
-        "noKeybind": "Nenhuma tecla atribuida",
-        "detectingResources": "detectando recursos",
-        "synchronizing": "Sincronizando sessao...",
-        "initializingServer": "Inicializando servidor",
-        "staffLabel": "Equipe",
-        "resources": "recursos",
-        "entryReady": "Entrada liberada"
-    },
-    "SocialEnabled": true,
-    "minimumLoadscreenSeconds": 0,
-    "BrandingEnabled": true,
-    "backgroundMedia": {
-        "audio": "video",
-        "rotateSeconds": 42,
-        "enabled": true,
-        "mode": "playlist",
-        "shuffle": false,
-        "items": [
-            {
-                "duration": 42,
-                "title": "Meu Pai Paga Minha Faculdade - Filho do Piseiro e Claudio Ney & Juliana (Show Co",
-                "src": "./videos/video_0692WFAqRxs_20260707192646.mp4",
-                "muted": false,
-                "type": "video"
-            }
-        ]
-    },
-    "colors": {
-        "bgPanel": "rgba(0, 0, 0, 0.30)",
-        "error": "#f87171",
-        "text": "#ede9fe",
-        "accent": "#9CF000",
-        "border": "#9CF000",
-        "gradientAccent": "linear-gradient(135deg, #ede9fe 0%, #59dbff 30%, #9359ff 60%, #59dbff 100%)",
-        "success": "#4ade80",
-        "textMuted": "#a5a0b8",
-        "bgCard": "rgba(156, 240, 0, 0.40)",
-        "accentDim": "rgba(156, 240, 0, 0.65)",
-        "bgDark": "#0f0a14",
-        "accentHover": "rgba(156, 240, 0, 0.15)"
-    },
-    "StaffEnabled": true,
-    "RulesEnabled": true,
     "keybinds": [
         {
+            "action": "Access Phone",
             "key": "F2",
-            "description": "Open your in-game phone.",
-            "action": "Access Phone"
+            "description": "Open your in-game phone."
         },
         {
+            "action": "Toggle Radial Menu",
             "key": "F3",
-            "description": "Open the quick action radial menu.",
-            "action": "Toggle Radial Menu"
+            "description": "Open the quick action radial menu."
         },
         {
+            "action": "Interact",
             "key": "E",
-            "description": "Interact with the environment and NPCs.",
-            "action": "Interact"
+            "description": "Interact with the environment and NPCs."
         },
         {
+            "action": "Open Main Menu",
             "key": "M",
-            "description": "Open the main pause menu.",
-            "action": "Open Main Menu"
+            "description": "Open the main pause menu."
         },
         {
+            "action": "Inventário",
             "key": "`",
-            "description": "Abre o sistema de inventário.",
-            "action": "Inventário"
+            "description": "Abre o sistema de inventário."
         },
         {
+            "action": "Descarte",
             "key": "L",
-            "description": "Descarta uma arma que voce esteja empunhando.",
-            "action": "Descarte"
+            "description": "Descarta uma arma que voce esteja empunhando."
         },
         {
+            "action": "Cinto de Segurança",
             "key": "B",
-            "description": "Coloca e remove o cinto de segurança.",
-            "action": "Cinto de Segurança"
+            "description": "Coloca e remove o cinto de segurança."
         },
         {
+            "action": "Motor",
             "key": "Z",
-            "description": "Liga e desliga motor do veiculo.",
-            "action": "Motor"
+            "description": "Liga e desliga motor do veiculo."
         }
     ],
-    "musicVolume": 0.6,
-    "staffCarouselEnabled": true,
-    "musicShuffle": false,
-    "musicShowCover": true,
-    "logoUrl": "https://media.discordapp.net/attachments/1519893174330458243/1520423861525545020/image.png?ex=6a4d0210&is=6a4bb090&hm=0181377eac3e6f9eb9111602be83f2828cdb6c079f7f9f3922ab79fcca727f44&=&format=webp&quality=lossless&width=856&height=856",
-    "communityName": "Forge Core",
-    "videoType": "video",
-    "videoSource": "./videos/video_0692WFAqRxs_20260707192646.mp4",
-    "backgroundAudio": "separate",
-    "featureCards": [
-        {
-            "icon": "people",
-            "description": "Historias reais, conexoes verdadeiras.",
-            "title": "Roleplay leve"
+    "layout": {
+        "teamCard": {
+            "height": 9.87,
+            "width": 15.63,
+            "x": 82.29,
+            "y": 47.72
         },
-        {
-            "icon": "shield",
-            "description": "Equipe ativa e dedicada para todos.",
-            "title": "Ambiente seguro"
+        "audio": {
+            "height": 7.23,
+            "width": 11.31,
+            "x": 8.7,
+            "y": 80.35
         },
-        {
-            "icon": "star",
-            "description": "Participe, interaja e faca parte.",
-            "title": "Comunidade ativa"
+        "tagline": {
+            "height": 2.59,
+            "width": 37.5,
+            "x": 31.25,
+            "y": 33.87
+        },
+        "shortcuts": {
+            "height": 5.29,
+            "width": 33.3,
+            "x": 33.35,
+            "y": 89.48
+        },
+        "status": {
+            "height": 13.33,
+            "width": 33.25,
+            "x": 33.38,
+            "y": 81.1
+        },
+        "intro": {
+            "height": 2.78,
+            "width": 37.5,
+            "x": 31.25,
+            "y": 10.52
+        },
+        "footer": {
+            "height": 2.59,
+            "width": 12.16,
+            "x": 85.76,
+            "y": 94.44
+        },
+        "socials": {
+            "height": 7.96,
+            "width": 16.23,
+            "x": 81.69,
+            "y": 5.46
+        },
+        "title": {
+            "height": 19.02,
+            "width": 37.5,
+            "x": 31.25,
+            "y": 14.63
         }
-    ],
-    "serverName": "FORGE BOX",
-    "social": {
-        "site": "",
-        "tebex": "",
-        "tiktok": "",
-        "x": "",
-        "instagram": "https://www.instagram.com/",
-        "discord": "https://discord.com/vQHFXwpqqP",
-        "youtube": "https://www.youtube.com"
     },
-    "tip": "Tenha paciencia por favor.....",
-    "VideoEnabled": true,
-    "language": "pt-BR",
-    "TipEnabled": false
+    "minimumLoadscreenSeconds": 0,
+    "staffCarouselEnabled": true,
+    "videoType": "video",
+    "tagline": "LOADING",
+    "musicAutoplay": true,
+    "musicShuffle": false,
+    "TipEnabled": false,
+    "rules": [
+        "Ouça os funcionários e siga as instruções deles.",
+        "Não divulgue outros servidores nem envie spam no chat.",
+        "Siga as diretrizes de interpretação de papéis e mantenha-se no personagem quando apropriado.",
+        "É proibido trapacear, explorar falhas do jogo ou usar mods não autorizados.",
+        "Seja respeitoso com todos os jogadores e membros da equipe."
+    ],
+    "elements": {
+        "teamCard": {
+            "textOpacity": 1,
+            "backgroundEnabled": true,
+            "glassEnabled": true,
+            "borderOpacity": 0,
+            "radius": 10,
+            "backgroundOpacity": 0,
+            "borderEnabled": false
+        },
+        "shortcuts": {
+            "backgroundEnabled": false,
+            "borderOpacity": 0,
+            "radius": 10,
+            "backgroundOpacity": 0,
+            "borderEnabled": false
+        },
+        "status": {
+            "backgroundEnabled": false,
+            "glassEnabled": true,
+            "borderOpacity": 0,
+            "radius": 10,
+            "backgroundOpacity": 0,
+            "borderEnabled": false
+        },
+        "socials": {
+            "backgroundEnabled": true,
+            "borderOpacity": 0,
+            "radius": 10,
+            "backgroundOpacity": 0,
+            "borderEnabled": false
+        },
+        "audio": {
+            "visible": false
+        },
+        "features": {
+            "visible": false
+        }
+    },
+    "backgroundMedia": {
+        "items": [
+            {
+                "src": "./videos/video_0692WFAqRxs_20260707192646.mp4",
+                "type": "video",
+                "duration": 42,
+                "muted": false,
+                "title": "Meu Pai Paga Minha Faculdade - Filho do Piseiro e Claudio Ney & Juliana (Show Co"
+            }
+        ],
+        "mode": "playlist",
+        "audio": "video",
+        "enabled": true,
+        "shuffle": false,
+        "rotateSeconds": 42
+    },
+    "changelogs": [
+        {
+            "items": [
+                "Initial release.",
+                "Loading screen with video and music."
+            ],
+            "date": "2025",
+            "version": "1.0.0"
+        },
+        {
+            "items": [
+                "Sistema de loadingscreen flexivel.",
+                "Add menu lib para configuraçoes e modificaçoes direta na loadinscreen."
+            ],
+            "date": "21/06/2026",
+            "version": "1.1.2"
+        }
+    ],
+    "musicShowCover": true,
+    "musicVolume": 0.6,
+    "musicTracks": [
+        {
+            "src": "./music/music_0692WFAqRxs_20260707192804.webm",
+            "album": "",
+            "type": "audio",
+            "name": "Meu Pai Paga Minha Faculdade - Filho do Piseiro e Claudio Ney & Juliana (Show Co",
+            "cover": "./images/music/default.png",
+            "artist": ""
+        }
+    ],
+    "logoUrl": "https://i.ibb.co/sphpgQs6/forge-flame.png",
+    "videoMuted": false,
+    "staffCarouselSeconds": 6,
+    "SocialEnabled": true,
+    "uiText": {
+        "backLabel": "Voltar",
+        "preparingEntry": "Preparando entrada",
+        "keybindsLabel": "Teclas",
+        "almostThere": "Quase la...",
+        "changelogsLabel": "Novidades",
+        "tipLabel": "DICA",
+        "loadingResources": "Carregando recursos do servidor...",
+        "serverTeamLabel": "Equipe do servidor",
+        "initializingServer": "Inicializando servidor",
+        "videoVolumeLabel": "Volume do vídeo",
+        "entryReady": "Entrada liberada",
+        "showUiLabel": "Mostrar UI",
+        "staffLabel": "Equipe",
+        "initializing": "Inicializando servidor...",
+        "noKeybind": "Nenhuma tecla atribuida",
+        "rulesLabel": "Regras",
+        "hideUiLabel": "Esconder UI",
+        "resources": "recursos",
+        "detectingResources": "detectando recursos",
+        "synchronizing": "Sincronizando sessao...",
+        "loadingComplete": "Carregamento concluido",
+        "remaining": "restantes"
+    },
+    "videoSource": "./videos/video_0692WFAqRxs_20260707192646.mp4",
+    "footer": {
+        "text": "Forge Project Development Team"
+    },
+    "links": {
+        "changelogs": "#",
+        "rules": "#",
+        "keybinds": "#"
+    },
+    "MusicEnabled": true,
+    "staff": [
+        {
+            "name": "PierreMoraes",
+            "role": "Dev",
+            "photo": "https://files.catbox.moe/3dtqmd.gif"
+        },
+        {
+            "name": "Spacer",
+            "role": "Dev",
+            "photo": "https://avatars.githubusercontent.com/u/116087077?v=4"
+        },
+        {
+            "name": "Hammer",
+            "role": "Modelador 3D",
+            "photo": "https://avatars.githubusercontent.com/u/105952664?v=4"
+        },
+        {
+            "name": "Anubis Chacal",
+            "role": "Modelador 3D",
+            "photo": "https://i.ibb.co/yc6wwW54/Screenshot-29.png"
+        },
+        {
+            "name": "Thg Souza",
+            "role": "Dev",
+            "photo": "https://avatars.githubusercontent.com/u/80721628?v=4"
+        },
+        {
+            "name": "lTuks",
+            "role": "Developer",
+            "photo": "https://avatars.githubusercontent.com/u/37461187?v=4"
+        }
+    ],
+    "ChangelogsEnabled": true,
+    "communityName": "Forge Project Apresenta"
 }

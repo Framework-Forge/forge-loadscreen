@@ -1,3 +1,6 @@
+import { normalizeAppearance } from './appearance.js';
+import { LAYOUT_ITEMS, normalizeLayout, PALETTES } from './layout.js';
+
 /**
  * Loading screen PR.
  * Defaults used when not in FiveM or when no handover data. In FiveM, PR.lua
@@ -165,6 +168,7 @@ const defaultConfig = {
   },
   uiText: {
     tipLabel: 'DICA',
+    videoVolumeLabel: 'Volume do vídeo',
     rulesLabel: 'Regras',
     changelogsLabel: 'Novidades',
     keybindsLabel: 'Teclas',
@@ -306,7 +310,7 @@ function normalizeBackgroundMedia(handoverData) {
     muted: pick(handoverData, 'videoMuted', 'VideoMuted'),
   };
   const rawItems = pick(raw, 'items', 'playlist', 'videos', 'Items', 'Playlist', 'Videos');
-  const items = Array.isArray(rawItems) && rawItems.length > 0
+  const items = Array.isArray(rawItems)
     ? rawItems.map(normalizeMediaItem).filter((item) => item.src)
     : (legacyItem.src ? [normalizeMediaItem(legacyItem)] : []);
 
@@ -341,8 +345,28 @@ function normalizeMusicTracks(handoverData) {
     : defaultConfig.musicTracks;
 }
 
+// Some clients provide a serialized handover. Connection metadata alone is not
+// the resource's configuration (serverAddress/devMode must not skip the JSON).
+export function decodeConfigData(data) {
+  let decoded = data;
+  for (let attempt = 0; attempt < 2 && typeof decoded === 'string'; attempt += 1) {
+    try { decoded = JSON.parse(decoded); } catch { return null; }
+  }
+  return decoded && typeof decoded === 'object' && !Array.isArray(decoded) ? decoded : null;
+}
+
+export function isLoadscreenConfig(data) {
+  const decoded = decodeConfigData(data);
+  const colors = decoded && (decoded.colors ?? decoded.Colors);
+  return !!(colors && typeof colors === 'object' && !Array.isArray(colors)
+    && ['backgroundMedia', 'BackgroundMedia', 'musicTracks', 'MusicTracks', 'keys', 'Keys', 'uiText', 'UiText', 'UIText']
+      .some((key) => decoded[key] != null));
+}
+
+const listValue = (value, fallback) => Array.isArray(value) ? value : value == null ? fallback : [];
+
 export function parseConfig(data) {
-  const handoverData = data || {};
+  const handoverData = decodeConfigData(data) || {};
   const baseKeys = getDefaultKeys();
   const handoverKeys = handoverData.keys ?? handoverData.Keys ?? {};
   const backgroundMedia = normalizeBackgroundMedia(handoverData);
@@ -366,6 +390,12 @@ export function parseConfig(data) {
   return {
     ...defaultConfig,
     ...handoverData,
+    layout: normalizeLayout(handoverData.layout),
+    elements: normalizeAppearance(handoverData.elements, Object.keys(LAYOUT_ITEMS)),
+    textVisibility: Object.fromEntries(['brand_title', 'brand_subtitle', 'logoUrl', ...Object.keys(defaultConfig.uiText)]
+      .filter((id) => handoverData.textVisibility?.[id] === false).map((id) => [id, false])),
+    palettePreset: Object.hasOwn(PALETTES, handoverData.palettePreset) ? handoverData.palettePreset : '',
+    followGlobalTheme: handoverData.followGlobalTheme !== false,
     brandingEnabled: bool(handoverData.brandingEnabled) ?? bool(handoverData.BrandingEnabled) ?? defaultConfig.brandingEnabled,
     videoEnabled: bool(handoverData.videoEnabled) ?? bool(handoverData.VideoEnabled) ?? defaultConfig.videoEnabled,
     musicEnabled: bool(handoverData.musicEnabled) ?? bool(handoverData.MusicEnabled) ?? defaultConfig.musicEnabled,
@@ -374,7 +404,10 @@ export function parseConfig(data) {
     changelogsEnabled: bool(handoverData.changelogsEnabled) ?? bool(handoverData.ChangelogsEnabled) ?? defaultConfig.changelogsEnabled,
     keybindsEnabled: bool(handoverData.keybindsEnabled) ?? bool(handoverData.KeybindsEnabled) ?? defaultConfig.keybindsEnabled,
     staffEnabled: hasHandover ? (bool(handoverData.staffEnabled) ?? bool(handoverData.StaffEnabled) ?? defaultConfig.staffEnabled) : true,
-    staff: handoverData.staff ?? handoverData.Staff ?? defaultConfig.staff,
+    staff: listValue(handoverData.staff ?? handoverData.Staff, defaultConfig.staff),
+    rules: listValue(handoverData.rules, defaultConfig.rules),
+    changelogs: listValue(handoverData.changelogs, defaultConfig.changelogs),
+    keybinds: listValue(handoverData.keybinds, defaultConfig.keybinds),
     staffCarouselEnabled: bool(handoverData.staffCarouselEnabled) ?? bool(handoverData.StaffCarouselEnabled) ?? defaultConfig.staffCarouselEnabled,
     staffCarouselSeconds: Number(handoverData.staffCarouselSeconds ?? handoverData.StaffCarouselSeconds) || defaultConfig.staffCarouselSeconds,
     socialEnabled: hasHandover ? (bool(handoverData.socialEnabled) ?? bool(handoverData.SocialEnabled) ?? defaultConfig.socialEnabled) : true,
@@ -385,9 +418,12 @@ export function parseConfig(data) {
     videoEnabled: backgroundMedia.enabled,
     videoSource: backgroundMedia.items[0]?.src ?? defaultConfig.videoSource,
     videoType: backgroundMedia.items[0]?.type ?? defaultConfig.videoType,
-    videoMuted: bool(backgroundMedia.items[0]?.muted) ?? bool(handoverData.videoMuted) ?? bool(handoverData.VideoMuted) ?? defaultConfig.videoMuted,
+    videoMuted: bool(handoverData.videoMuted) ?? bool(handoverData.VideoMuted) ?? defaultConfig.videoMuted,
     musicTracks,
-    musicVolume: Number(handoverData.musicVolume ?? handoverData.MusicVolume) || defaultConfig.musicVolume,
+    musicVolume: (() => {
+      const raw = handoverData.musicVolume ?? handoverData.MusicVolume;
+      return raw != null && Number.isFinite(Number(raw)) ? Math.max(0, Math.min(1, Number(raw))) : defaultConfig.musicVolume;
+    })(),
     musicShuffle: bool(handoverData.musicShuffle) ?? bool(handoverData.MusicShuffle) ?? defaultConfig.musicShuffle,
     musicAutoplay: bool(handoverData.musicAutoplay) ?? bool(handoverData.MusicAutoplay) ?? defaultConfig.musicAutoplay,
     musicShowCover: bool(handoverData.musicShowCover) ?? bool(handoverData.MusicShowCover) ?? defaultConfig.musicShowCover,
@@ -395,14 +431,13 @@ export function parseConfig(data) {
     brand: {
       ...defaultConfig.brand,
       ...(handoverData.brand ?? handoverData.Brand ?? {}),
+      ...(typeof handoverData.logoUrl === 'string' ? { logo: handoverData.logoUrl } : {}),
     },
     uiText: {
       ...defaultConfig.uiText,
       ...(handoverData.uiText ?? handoverData.UiText ?? handoverData.UIText ?? {}),
     },
-    featureCards: Array.isArray(handoverData.featureCards ?? handoverData.FeatureCards)
-      ? (handoverData.featureCards ?? handoverData.FeatureCards)
-      : defaultConfig.featureCards,
+    featureCards: listValue(handoverData.featureCards ?? handoverData.FeatureCards, defaultConfig.featureCards),
     footer: {
       ...defaultConfig.footer,
       ...(handoverData.footer ?? handoverData.Footer ?? {}),
@@ -422,4 +457,5 @@ export function parseConfig(data) {
 }
 
 const handover = typeof window !== 'undefined' && window.nuiHandoverData ? window.nuiHandoverData : {};
+export const hasInitialConfig = isLoadscreenConfig(handover);
 export const config = parseConfig(handover);

@@ -28,54 +28,6 @@
   gap: 0.5rem;
 }
 
-.header__logo {
-  flex-shrink: 0;
-}
-
-.header__logo-img--sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.header__logo-gradient {
-  height: 2.5rem;
-  width: 2.5rem;
-  background: var(--gradient-accent);
-  background-size: 300% 300%;
-  -webkit-mask-image: url(./images/logo.png);
-  mask-image: url(./images/logo.png);
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  animation: gradientShift 5s ease infinite;
-}
-
-.header__logo-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 700;
-  font-size: 1.5rem;
-  background: var(--gradient-accent);
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  border: 2px solid var(--accent);
-  border-radius: 4px;
-  animation: gradientShift 5s ease infinite;
-}
-
 .header__branding {
   display: flex;
   flex-direction: column;
@@ -133,7 +85,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-/* Top right: social icons + staff button */
+/* Top right: social icons and UI visibility */
 .header-right {
   position: fixed;
   top: 1.5rem;
@@ -153,10 +105,6 @@
   margin-top: 0;
   padding-top: 0;
   border-top: none;
-}
-
-.header-right__staff {
-  flex-shrink: 0;
 }
 
 /* Main panel */
@@ -581,16 +529,16 @@
   overflow: hidden;
 }
 
-.staff-strip__track {
-  display: flex;
-  transition: transform 0.45s ease;
-}
-
 .staff-strip__slide {
-  min-width: 100%;
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  animation: staff-strip-appear 0.2s ease-out;
+}
+
+@keyframes staff-strip-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .staff-strip__photo {
@@ -780,48 +728,6 @@
   max-width: min(98vw, 1280px);
 }
 
-.modal-panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.modal-panel__title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1.25rem;
-  background: var(--gradient-accent);
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: var(--text);
-  animation: gradientShift 5s ease infinite;
-}
-
-.modal-panel__back {
-  padding: 0.5rem 1rem;
-  background: transparent;
-  border: 1px solid var(--border);
-  background: var(--gradient-accent);
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: var(--accent);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  transition: border-color 0.15s;
-  animation: gradientShift 5s ease infinite;
-}
-
-.modal-panel__back:hover {
-  background: var(--accent-hover);
-  color: var(--text);
-}
-
 .modal-list {
   list-style: none;
   padding: 1rem 1.25rem;
@@ -885,48 +791,6 @@
   margin-bottom: 0.25rem;
 }
 
-.keybinds-panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.keybinds-panel__title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1.25rem;
-  background: var(--gradient-accent);
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: var(--text);
-  animation: gradientShift 5s ease infinite;
-}
-
-.keybinds-panel__back {
-  padding: 0.5rem 1rem;
-  background: transparent;
-  border: 1px solid var(--border);
-  background: var(--gradient-accent);
-  background-size: 300% 300%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: var(--accent);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  transition: border-color 0.15s;
-  animation: gradientShift 5s ease infinite;
-}
-
-.keybinds-panel__back:hover {
-  background: var(--accent-hover);
-  color: var(--text);
-}
-
 .keybinds-list {
   list-style: none;
   padding: 1rem 1.25rem;
@@ -972,10 +836,6 @@
 }
 
 /* Staff modal – slider with photo cards */
-.staff-modal .modal-panel__header {
-  flex-shrink: 0;
-}
-
 .staff-slider {
   position: relative;
   overflow: hidden;
@@ -1156,41 +1016,6 @@
   animation: modalPanelIn 0.25s ease-out forwards;
 }
 
-.keybind-dialog__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.keybind-dialog__key {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1rem;
-  padding: 0.35rem 0.6rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-}
-
-.keybind-dialog__close {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.5rem;
-  line-height: 1;
-  padding: 0.25rem;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.keybind-dialog__close:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .keybind-dialog__desc {
   margin: 0;
   padding: 1rem 1.25rem;
@@ -1203,7 +1028,7 @@
 .app {
   justify-content: center;
   padding: clamp(1rem, 2.4vw, 2.1rem);
-  background: #030307;
+  background: var(--bg-dark);
   overflow: hidden;
 }
 
@@ -1260,7 +1085,6 @@
 }
 
 .app--ui-hidden::before,
-.app--ui-hidden::after,
 .app--ui-hidden .colour-overlay,
 .app--ui-hidden .header,
 .app--ui-hidden .main,
@@ -1549,17 +1373,6 @@
   margin-top: 1.1rem;
 }
 
-.app::after {
-  content: attr(data-footer-text);
-  position: fixed;
-  right: clamp(2rem, 5vw, 6rem);
-  bottom: clamp(2rem, 4vw, 4rem);
-  z-index: 2;
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.18em;
-}
-
 .modal-overlay {
   background:
     radial-gradient(circle at 50% 20%, rgba(255, 51, 79, 0.18), transparent 28%),
@@ -1576,27 +1389,6 @@
   background: rgba(8, 8, 18, 0.96);
   border-color: rgba(255, 255, 255, 0.17);
   box-shadow: 0 26px 80px rgba(0, 0, 0, 0.62);
-}
-
-.modal-panel__header {
-  padding: 1.1rem 1.35rem;
-  background: linear-gradient(90deg, rgba(255, 51, 79, 0.12), transparent);
-}
-
-.modal-panel__title,
-.keybinds-panel__title {
-  font-size: 1.55rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.modal-panel__back,
-.keybinds-panel__back {
-  min-height: 38px;
-  padding: 0.45rem 0.9rem;
-  background: rgba(255, 255, 255, 0.04);
-  -webkit-text-fill-color: currentColor;
-  color: var(--text);
 }
 
 .modal-list,
@@ -1786,8 +1578,7 @@
     border-bottom: none;
   }
 
-  .tip,
-  .app::after {
+  .tip {
     display: none;
   }
 

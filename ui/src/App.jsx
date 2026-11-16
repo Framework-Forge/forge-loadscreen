@@ -1,13 +1,20 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import VideoBackground from './components/VideoBackground';
 import MusicWidget from './components/MusicWidget';
 import Keyboard from './components/Keyboard';
 import SocialIcons from './components/SocialIcons';
-import { IconLightning, IconInfo, IconDocument, IconKeyboard, IconPeople } from './components/Icons';
-import { config, parseConfig } from './config';
+import { IconLightning, IconInfo, IconDocument, IconKeyboard, IconPeople, IconShield, IconStar } from './components/Icons';
+import { nextPlaybackIndex } from './playback';
+import { config, parseConfig, hasInitialConfig, isLoadscreenConfig } from './config';
+import { layoutProps } from './layout';
+import { editorDraft } from './editorConfig';
 import './App.css';
+import './layout.css';
+import './editor.css';
 
-const isLoadingScreenFrame = typeof window !== 'undefined' && !!window.nuiHandoverData;
+// Frame identity is explicit. Handover is configuration, not an opening signal.
+const PreviewEditor = lazy(() => import('./components/PreviewEditor'));
+const isLoadingScreenFrame = typeof document !== 'undefined' && document.documentElement.dataset.forgeLoadscreenFrame === 'connection';
 const getNowMs = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 function normalizeLanguage(locale) {
@@ -18,7 +25,12 @@ function normalizeLanguage(locale) {
   return 'pt-BR';
 }
 
-const initialConfig = parseConfig({ ...config, language: normalizeLanguage(config.language) });
+function normalizeUiConfig(data) {
+  const parsed = parseConfig(data);
+  return { ...parsed, language: normalizeLanguage(parsed.language) };
+}
+
+const initialConfig = normalizeUiConfig(config);
 
 const TRANSLATIONS = {
   'pt-BR': {
@@ -38,7 +50,7 @@ const TRANSLATIONS = {
     keybinds: 'Teclas',
     staff: 'Equipe',
     serverTeam: 'Equipe do servidor',
-    back: 'Voltar',
+    close: 'Fechar',
     noKeybind: 'Nenhuma tecla atribuida',
   },
   'en-US': {
@@ -58,7 +70,7 @@ const TRANSLATIONS = {
     keybinds: 'Keybinds',
     staff: 'Staff',
     serverTeam: 'Server team',
-    back: 'Back',
+    close: 'Close',
     noKeybind: 'No keybind assigned',
   },
   'es-ES': {
@@ -78,13 +90,32 @@ const TRANSLATIONS = {
     keybinds: 'Teclas',
     staff: 'Equipo',
     serverTeam: 'Equipo del servidor',
-    back: 'Volver',
+    close: 'Cerrar',
     noKeybind: 'Ninguna tecla asignada',
   },
 };
 
+function ModalHeader({ title, closeLabel, onClose }) {
+  return (
+    <div className="modal-panel__header">
+      <h2 className="modal-panel__title">{title}</h2>
+      <button type="button" className="modal-panel__close" onClick={onClose} aria-label={closeLabel}>×</button>
+    </div>
+  );
+}
+
+function LayoutElement({ as: Tag = 'div', id, className, layout, elements, children, ...attributes }) {
+  return (
+    <>
+      {layout[id] && elements[id]?.visible !== false && <Tag {...attributes} className={className + ' layout-placeholder'} aria-hidden="true">{children}</Tag>}
+      <Tag {...attributes} className={className} {...layoutProps(id, layout, elements)}>{children}</Tag>
+    </>
+  );
+}
+
 function App() {
-  const [PR, setPR] = useState(initialConfig);
+  const [runtimeConfig, setPR] = useState(initialConfig);
+  const [configurationReady, setConfigurationReady] = useState(hasInitialConfig);
   const [loadFraction, setLoadFraction] = useState(0);
   const [statusText, setStatusText] = useState('Initializing FiveM...');
   const [resourceCount, setResourceCount] = useState(0);
@@ -95,22 +126,69 @@ function App() {
   const [showStaff, setShowStaff] = useState(false);
   const [staffIndex, setStaffIndex] = useState(0);
   const [mediaIndex, setMediaIndex] = useState(0);
+  const [previewVideoIndex, setPreviewVideoIndex] = useState(null);
   const [logoError, setLogoError] = useState(false);
   const [visible, setVisible] = useState(isLoadingScreenFrame);
   const [isPreview, setIsPreview] = useState(false);
   const [uiHidden, setUiHidden] = useState(false);
-  const [ytVolume, setYtVolume] = useState(initialConfig.musicVolume || 0.6);
+  const [previewSettings, setPreviewSettings] = useState(null);
+  const [unsavedOnOpen, setUnsavedOnOpen] = useState(false);
+  const PR = useMemo(() => previewSettings ? normalizeUiConfig({
+    ...previewSettings,
+    backgroundMedia: { ...previewSettings.backgroundMedia, enabled: previewSettings.VideoEnabled },
+  }) : runtimeConfig, [previewSettings, runtimeConfig]);
+  const [layoutScene, setLayoutScene] = useState('');
+  const editingRef = useRef(false);
+  const modalFocusRef = useRef({});
+  const previousModalRef = useRef(null);
+  const [ytVolume, setYtVolume] = useState(initialConfig.musicVolume ?? 0.6);
+  const mediaVolume = previewSettings?.musicVolume ?? ytVolume;
   const [minimumDurationPhase, setMinimumDurationPhase] = useState(false);
   const [minimumRemainingSeconds, setMinimumRemainingSeconds] = useState(0);
   const minimumDurationPhaseRef = useRef(false);
   const minimumTimerRef = useRef(null);
   const PRRef = useRef(initialConfig);
+  const runtimeConfigReceivedRef = useRef(hasInitialConfig);
   const editableTextRef = useRef(null);
   const loadingStartedAtRef = useRef(getNowMs() - Number(initialConfig.loadingElapsedMs || 0));
 
   useEffect(() => {
+    console.info(`[forge-loadscreen] Interface montada: ${isLoadingScreenFrame ? 'conexao' : 'previa'}.`);
+    if (isLoadingScreenFrame && runtimeConfigReceivedRef.current) {
+      console.info('[forge-loadscreen] Configuracao inicial validada antes da exibicao.');
+    }
+    if (!isLoadingScreenFrame || runtimeConfigReceivedRef.current) return undefined;
+
+    // The same persisted public JSON is available before Lua callbacks start.
+    // Do not let a slow file response overwrite a newer server configuration.
+    let active = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    fetch(new URL('../../config.json', window.location.href), { signal: controller.signal, cache: 'no-store' })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((saved) => {
+        if (!active || runtimeConfigReceivedRef.current) return;
+        if (!isLoadscreenConfig(saved)) throw new Error('configuracao de loadscreen incompleta');
+        const localConfig = normalizeUiConfig(saved);
+        PRRef.current = localConfig;
+        setPR(localConfig);
+        setConfigurationReady(true);
+        console.info('[forge-loadscreen] JSON local aplicado antes da exibicao do conteudo.');
+      })
+      .catch((error) => {
+        if (active) console.warn(`[forge-loadscreen] JSON local indisponivel; aguardando configuracao do servidor: ${error.message}`);
+      })
+      .finally(() => clearTimeout(timeout));
+
+    return () => { active = false; clearTimeout(timeout); controller.abort(); };
+  }, []);
+
+  useEffect(() => {
     PRRef.current = PR;
-    setYtVolume(PR.musicVolume || 0.6);
+    setYtVolume(PR.musicVolume ?? 0.6);
   }, [PR.musicVolume]);
 
   useEffect(() => {
@@ -160,11 +238,13 @@ function App() {
     const items = PR.backgroundMedia?.items?.length
       ? PR.backgroundMedia.items
       : [{ src: PR.videoSource, type: PR.videoType, muted: PR.videoMuted, duration: 42 }];
-    return items.filter((item) => item?.src && item.src.trim() !== '');
+    const available = items.filter((item) => item?.src && item.src.trim() !== '');
+    return PR.backgroundMedia?.mode === 'single' ? available.slice(0, 1) : available;
   }, [PR.backgroundMedia, PR.videoSource, PR.videoType, PR.videoMuted]);
-  const currentMedia = backgroundItems[mediaIndex] || backgroundItems[0] || null;
-  const hasValidMusic = PR.musicEnabled !== false && PR.musicTracks && PR.musicTracks.some(t => t.src && t.src.trim() !== '');
+  const currentMedia = (previewSettings && previewVideoIndex !== null && PR.backgroundMedia.items[previewVideoIndex])
+    || backgroundItems[mediaIndex] || backgroundItems[0] || null;
   const backgroundAudioMode = String(PR.backgroundMedia?.audio || PR.backgroundAudio || 'separate').toLowerCase();
+  const hasValidMusic = backgroundAudioMode === 'separate' && PR.musicEnabled !== false && PR.musicTracks && PR.musicTracks.some(t => t.src && t.src.trim() !== '');
   const useVideoAudio = backgroundAudioMode === 'video' || backgroundAudioMode === 'native';
   const isVideoVolumeOnly = PR.videoEnabled !== false && currentMedia && !hasValidMusic && useVideoAudio;
   const showMusicWidget = hasValidMusic || isVideoVolumeOnly;
@@ -177,6 +257,24 @@ function App() {
       photo: entry.photo || '',
     };
   }).filter((entry) => entry.name || entry.photo), [PR.staff]);
+  const currentStaffIndex = Math.min(staffIndex, Math.max(0, staffList.length - 1));
+  const currentStaff = staffList[currentStaffIndex];
+  const { layout, elements } = PR;
+  const blockVisible = (id) => elements[id]?.visible !== false;
+  const textVisible = (id) => PR.textVisibility[id] !== false;
+  const separated = ['status','shortcuts','tip'].some((id) =>
+    layout[id] || elements[id]?.backgroundEnabled !== undefined || elements[id]?.borderEnabled !== undefined
+    || elements[id]?.glassEnabled === true);
+  const closeModal = (id) => {
+    if (id === 'keyDetail' || id === 'keys') setKeybindDialog(null);
+    if (id === 'rules') setShowRules(false);
+    if (id === 'news') setShowChangelogs(false);
+    if (id === 'keys') setShowKeybinds(false);
+    if (id === 'team') setShowStaff(false);
+    setLayoutScene((selected) => selected === id ? '' : selected);
+  };
+  const activeModal = keybindDialog ? 'keyDetail'
+    : showKeybinds ? 'keys' : showRules ? 'rules' : showChangelogs ? 'news' : showStaff ? 'team' : null;
   const serverResourceTotal = Number(PR.serverResourceCount || PR.resourceTotal || 0);
   const displayedResourceCount = serverResourceTotal > 0
     ? Math.min(serverResourceTotal, Math.round(loadFraction * serverResourceTotal))
@@ -189,7 +287,6 @@ function App() {
     keybinds: PR.uiText?.keybindsLabel || text.keybinds,
     staff: PR.uiText?.staffLabel || text.staff,
     serverTeam: PR.uiText?.serverTeamLabel || text.serverTeam,
-    back: PR.uiText?.backLabel || text.back,
     preparingEntry: PR.uiText?.preparingEntry || text.preparingEntry,
     entryReady: PR.uiText?.entryReady || text.entryReady,
     loadingComplete: PR.uiText?.loadingComplete || text.loadingComplete,
@@ -205,21 +302,33 @@ function App() {
     hideUiLabel: PR.uiText?.hideUiLabel || 'Esconder UI',
     showUiLabel: PR.uiText?.showUiLabel || 'Mostrar UI',
   };
+  const labelAliases = { rulesLabel: 'rules', changelogsLabel: 'changelogs', keybindsLabel: 'keybinds',
+    staffLabel: 'staff', serverTeamLabel: 'serverTeam' };
+  for (const id of Object.keys(PR.textVisibility)) {
+    const label = labelAliases[id] || id;
+    if (Object.hasOwn(editableText, label)) editableText[label] = '';
+  }
   const featureCards = Array.isArray(PR.featureCards) && PR.featureCards.length
     ? PR.featureCards.slice(0, 3)
     : [];
   const featureIcons = [IconPeople, IconInfo, IconLightning];
-  const tipLabel = PR.uiText?.tipLabel || 'DICA';
+  const namedFeatureIcons = { people: IconPeople, shield: IconShield, star: IconStar, info: IconInfo,
+    lightning: IconLightning, document: IconDocument, keyboard: IconKeyboard };
+  const tipLabel = textVisible('tipLabel') ? PR.uiText?.tipLabel || 'DICA' : '';
   const footerText = PR.footer?.text || 'DESENVOLVIDO COM AMOR POR EQUIPE forge STUDIOS';
 
   useEffect(() => {
     editableTextRef.current = editableText;
   }, [editableText]);
 
+  const activeColors = previewSettings?.colors ?? PR.colors;
+
   // Apply theme colours from config to CSS variables
   useEffect(() => {
     const root = document.documentElement;
-    const colors = PR.colors || {};
+    const colors = activeColors;
+    root.style.setProperty('--stage-text', colors.text);
+    root.style.setProperty('--stage-accent', colors.accent);
     const map = {
       bgDark: '--bg-dark',
       bgPanel: '--bg-panel',
@@ -239,27 +348,28 @@ function App() {
         root.style.setProperty(cssVar, colors[key]);
       }
     });
-  }, [PR.colors]);
+  }, [activeColors]);
 
   useEffect(() => {
     if (mediaIndex >= backgroundItems.length) setMediaIndex(0);
     if (backgroundItems.length <= 1) return undefined;
-    const item = backgroundItems[mediaIndex] || backgroundItems[0];
-    const seconds = Number(item?.duration || PR.backgroundMedia?.rotateSeconds || 42);
+    const seconds = Number(currentMedia?.duration || PR.backgroundMedia?.rotateSeconds || 42);
     const timer = setTimeout(() => {
-      setMediaIndex((index) => (index + 1) % backgroundItems.length);
+      setMediaIndex((index) => nextPlaybackIndex(index, backgroundItems.length, PR.backgroundMedia?.shuffle === true));
     }, Math.max(seconds, 8) * 1000);
     return () => clearTimeout(timer);
-  }, [backgroundItems, mediaIndex, PR.backgroundMedia?.rotateSeconds]);
+  }, [backgroundItems.length, mediaIndex, currentMedia?.src, currentMedia?.duration, PR.backgroundMedia?.rotateSeconds, PR.backgroundMedia?.shuffle]);
+
+  useEffect(() => { setLogoError(false); }, [PR.brand?.logo]);
 
   useEffect(() => {
-    if (PR.staffEnabled === false || PR.staffCarouselEnabled === false || staffList.length <= 1) return undefined;
+    if (showStaff || PR.staffEnabled === false || PR.staffCarouselEnabled === false || staffList.length <= 1) return undefined;
     const seconds = Math.max(Number(PR.staffCarouselSeconds || 6), 3);
     const timer = setInterval(() => {
       setStaffIndex((index) => (index + 1) % staffList.length);
     }, seconds * 1000);
     return () => clearInterval(timer);
-  }, [PR.staffEnabled, PR.staffCarouselEnabled, PR.staffCarouselSeconds, staffList.length]);
+  }, [showStaff, PR.staffEnabled, PR.staffCarouselEnabled, PR.staffCarouselSeconds, staffList.length]);
 
   useEffect(() => {
     const onMessage = (event) => {
@@ -277,6 +387,8 @@ function App() {
         loadFraction: fraction,
         action,
         isPreview: previewMode,
+        editLayout,
+        unsaved,
         config: newConfig,
         remainingSeconds,
         waitProgress,
@@ -284,27 +396,52 @@ function App() {
       
       if (action === 'show') {
         setVisible(true);
+        setUiHidden(false);
+        setShowRules(false);
+        setShowChangelogs(false);
+        setShowKeybinds(false);
+        setShowStaff(false);
+        setKeybindDialog(null);
+        setLayoutScene('');
+        setStaffIndex(0);
+        editingRef.current = previewMode === true && editLayout === true && !isLoadingScreenFrame;
+        setUnsavedOnOpen(unsaved === true);
+        setPreviewSettings(null);
         clearMinimumTimer();
         minimumDurationPhaseRef.current = false;
         setMinimumDurationPhase(false);
         setMinimumRemainingSeconds(0);
         if (previewMode !== undefined) setIsPreview(previewMode);
-        if (newConfig) {
-          setPR(parseConfig({ ...newConfig, language: normalizeLanguage(newConfig.language) }));
+        if (isLoadscreenConfig(newConfig)) {
+          runtimeConfigReceivedRef.current = true;
+          setConfigurationReady(true);
+          const nextConfig = normalizeUiConfig(newConfig);
+          PRRef.current = nextConfig;
+          setPR(nextConfig);
+          if (editingRef.current) setPreviewSettings(editorDraft(newConfig));
+          setYtVolume(nextConfig.musicVolume);
+          setMediaIndex(0);
+          setPreviewVideoIndex(null);
         }
       } else if (action === 'hide') {
         setVisible(false);
         setIsPreview(false);
+        editingRef.current = false;
+        setPreviewSettings(null);
         clearMinimumTimer();
         minimumDurationPhaseRef.current = false;
         setMinimumDurationPhase(false);
         setMinimumRemainingSeconds(0);
       } else if (action === 'updateConfig') {
-        if (newConfig) {
-          setPR(parseConfig({ ...newConfig, language: normalizeLanguage(newConfig.language) }));
-          PRRef.current = parseConfig({ ...newConfig, language: normalizeLanguage(newConfig.language) });
+        if (!editingRef.current && isLoadscreenConfig(newConfig)) {
+          runtimeConfigReceivedRef.current = true;
+          setConfigurationReady(true);
+          const nextConfig = normalizeUiConfig(newConfig);
+          PRRef.current = nextConfig;
+          setPR(nextConfig);
         }
       } else if (action === 'minimumDurationWait') {
+        if (!isLoadingScreenFrame) return;
         const progress = typeof waitProgress === 'number' ? Math.min(1, Math.max(0, waitProgress)) : 0;
         const seconds = typeof remainingSeconds === 'number' ? Math.max(0, Math.ceil(remainingSeconds)) : 0;
         setVisible(true);
@@ -317,6 +454,7 @@ function App() {
       }
 
       if (eventName === 'loadProgress' && typeof fraction === 'number') {
+        if (!isLoadingScreenFrame) return;
         if (minimumDurationPhaseRef.current) return;
 
         if (fraction >= 1 && isLoadingScreenFrame) {
@@ -353,15 +491,42 @@ function App() {
     return () => window.removeEventListener('message', onMessage);
   }, []);
 
-  const handleClosePreview = () => {
+  const handleClosePreview = async (settings) => {
     const resourceName = typeof window.GetParentResourceName === 'function' ? window.GetParentResourceName() : 'forge-loadscreen';
-    fetch(`https://${resourceName}/closePreview`, {
+    const callback = settings ? 'applyPreviewLayout' : 'closePreview';
+    const response = await fetch(`https://${resourceName}/${callback}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: JSON.stringify({}),
-    }).catch(err => console.error("Error closing preview:", err));
+      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+      body: JSON.stringify(settings || {}),
+    });
+    if (!response.ok || (settings && !(await response.json()).ok)) throw new Error(callback);
+  };
+  const closePreview = () => handleClosePreview().catch((error) => console.error('Erro ao fechar prévia', error));
+
+  const saveVisualConfig = async (settings) => {
+    const resource = typeof window.GetParentResourceName === 'function' ? window.GetParentResourceName() : 'forge-loadscreen';
+    const response = await fetch('https://' + resource + '/savePreviewConfig', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+      body: JSON.stringify(settings),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || 'save_failed');
+    const published = editorDraft(result.config);
+    setPreviewSettings((current) => current === settings ? published : current);
+    return published;
+  };
+
+  const selectLayoutScene = (id) => {
+    setLayoutScene(id);
+    setUiHidden(false);
+    setShowRules(id === 'rules');
+    setShowChangelogs(id === 'news');
+    setShowKeybinds(id === 'keys' || id === 'keyDetail');
+    setShowStaff(id === 'team');
+    const key = id === 'keyDetail'
+      ? Object.entries(PR.keys).find(([, entry]) => entry.enabled) || ['F1', {}] : null;
+    setKeybindDialog(key && { id: key[0], info: key[1].info });
   };
 
   const toggleUiHidden = () => {
@@ -379,18 +544,45 @@ function App() {
   };
 
   useEffect(() => {
-    if (!isPreview) return;
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        handleClosePreview();
+    if (!visible || previewSettings) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Tab' && activeModal) {
+        const panel = document.querySelector('[data-layout="' + activeModal + '"]');
+        const controls = [...(panel?.querySelectorAll('button:not(:disabled), [tabindex="0"]') || [])];
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (!first) return;
+        if (!panel.contains(document.activeElement) || document.activeElement === (event.shiftKey ? first : last)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        }
+        return;
       }
+      if (event.key !== 'Escape' || event.repeat) return;
+      if (activeModal) closeModal(activeModal);
+      else if (isPreview) closePreview();
+      else return;
+      event.preventDefault();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPreview]);
+  }, [visible, isPreview, activeModal, Boolean(previewSettings)]);
+
+  useLayoutEffect(() => {
+    const previous = previousModalRef.current;
+    previousModalRef.current = visible ? activeModal : null;
+    if (!visible || previewSettings) return;
+    if ((!activeModal && previous) || (previous === 'keyDetail' && activeModal === 'keys')) {
+      modalFocusRef.current[previous]?.focus();
+      return;
+    }
+    if (!activeModal) return;
+    const panel = document.querySelector(`[data-layout="${activeModal}"]`);
+    panel?.querySelector('.modal-panel__close')?.focus();
+  }, [visible, activeModal, Boolean(previewSettings)]);
 
   const openExternalUrl = (url) => {
-    if (!url || url === '#') return;
+    if (typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) return;
     if (typeof window.invokeNative === 'function') {
       window.invokeNative('openUrl', url);
     } else {
@@ -428,16 +620,27 @@ function App() {
 
   if (!visible) return null;
 
+  // Never flash the development/default preset while the real JSON is pending.
+  // Progress and configuration listeners stay mounted so server delivery can recover.
+  if (isLoadingScreenFrame && !configurationReady) {
+    return (
+      <div className="app" role="status" data-config-pending="true"
+        style={{ display: 'grid', placeItems: 'center', background: '#080808', color: '#fff' }}>
+        <p>Carregando configuração do servidor…</p>
+      </div>
+    );
+  }
+
   return (
-    <div className={`app ${uiHidden ? 'app--ui-hidden' : ''}`} data-footer-text={footerText}>
+    <div className={`app${uiHidden ? ' app--ui-hidden' : ''}${previewSettings ? ' app--layout-editing' : ''}`}>
       {isPreview && (
         <button
-          onClick={handleClosePreview}
+          onClick={closePreview}
           style={{
             position: 'fixed',
             top: '20px',
             right: '20px',
-            zIndex: 99999,
+            zIndex: previewSettings ? 100003 : 99999,
             backgroundColor: 'rgba(239, 68, 68, 0.85)',
             color: 'white',
             border: 'none',
@@ -462,7 +665,7 @@ function App() {
           source={currentMedia.src}
           type={currentMedia.type}
           muted={shouldMuteVideo}
-          volume={ytVolume}
+          volume={mediaVolume}
           className="app__video"
         />
       )}
@@ -470,31 +673,21 @@ function App() {
 
       <header className="header">
         {PR.brandingEnabled !== false && (
-          <div className="header__branding">
-            {PR.brand?.logo && (
-              <img src={PR.brand.logo} alt="Logo" className="header__brand-logo" />
-            )}
+          <div className="header__branding" {...layoutProps("branding", layout, elements)}>
+            {textVisible('logoUrl') && (PR.brand?.logo && !logoError
+              ? <img src={PR.brand.logo} alt="Logo" className="header__brand-logo" onError={() => setLogoError(true)} />
+              : <span className="header__brand-logo" style={{ display: 'grid', placeItems: 'center', fontSize: '2rem', fontWeight: 700 }}>{PR.brand?.mark || ''}</span>)}
             <div>
-              <span className="header__branding-server">{PR.brand?.title || 'FiveM'}</span>
-              <span className="header__branding-community">{PR.brand?.subtitle || 'Powered by CitizenFX'}</span>
+              {textVisible('brand_title') && <span className="header__branding-server">{PR.brand?.title || 'FiveM'}</span>}
+              {textVisible('brand_subtitle') && <span className="header__branding-community">{PR.brand?.subtitle || 'Powered by CitizenFX'}</span>}
             </div>
           </div>
         )}
       </header>
 
-      <div className="header-right">
+      <div className="header-right" {...layoutProps("socials", layout, elements)}>
         {PR.socialEnabled !== false && (
           <SocialIcons social={PR.social || {}} />
-        )}
-        {PR.staffEnabled !== false && (
-          <button
-            type="button"
-            className="nav__btn header-right__staff"
-            onClick={() => { setShowStaff(true); setStaffIndex(0); }}
-          >
-            <IconPeople className="nav__btn-icon" size={18} />
-            {editableText.staff}
-          </button>
         )}
         <button
           type="button"
@@ -507,24 +700,24 @@ function App() {
 
       <main className="main">
         <section className="hero">
-          <div className="hero__eyebrow">
+          <LayoutElement id="intro" layout={layout} elements={elements} className="hero__eyebrow">
             <span />
             {PR.communityName || 'forge Box'}
             <span />
-          </div>
-          <h1 className="hero__title">{PR.serverName || 'ロックスター'}</h1>
-          <div className="hero__subtitle">
+          </LayoutElement>
+          <LayoutElement as="h1" id="title" layout={layout} elements={elements} className="hero__title">{PR.serverName || 'ロックスター'}</LayoutElement>
+          <LayoutElement id="tagline" layout={layout} elements={elements} className="hero__subtitle">
             <span />
             {PR.slogan || 'Bem-vindo ao servidor'}
             <span />
-          </div>
+          </LayoutElement>
         </section>
 
         <div className="main__bottom">
           {featureCards.length > 0 && (
-            <section className="feature-strip" aria-label="Destaques">
+            <LayoutElement as="section" className="feature-strip" aria-label="Destaques" id="features" layout={layout} elements={elements}>
               {featureCards.map((card, index) => {
-                const FeatureIcon = featureIcons[index] || IconLightning;
+                const FeatureIcon = namedFeatureIcons[card.icon] || featureIcons[index] || IconLightning;
                 return (
                   <div className="feature-strip__item" key={`${card.title || 'card'}-${index}`}>
                     <FeatureIcon className="feature-strip__icon" size={28} />
@@ -535,11 +728,11 @@ function App() {
                   </div>
                 );
               })}
-            </section>
+            </LayoutElement>
           )}
 
-          <div className="panel">
-            <div className="loading-section">
+          <div className={separated ? 'panel panel--separated' : 'panel'}>
+            <LayoutElement className="loading-section" id="status" layout={layout} elements={elements}>
               <div className="loading-section__row">
                 <span className="loading-section__label">
                   <IconLightning className="loading-section__icon" size={18} />
@@ -560,89 +753,91 @@ function App() {
               <div className="progress-bar">
                 <div className="progress-bar__fill" style={{ width: `${loadFraction * 100}%` }} />
               </div>
-            </div>
+            </LayoutElement>
 
-            {PR.tipEnabled !== false && <p className="tip" data-label={tipLabel}>{PR.tip}</p>}
+            {PR.tipEnabled !== false && (
+              <LayoutElement as="p" className="tip" data-label={tipLabel} id="tip" layout={layout} elements={elements}>{PR.tip}</LayoutElement>
+            )}
 
-            <nav className="panel-nav">
-              {PR.rulesEnabled !== false && (
-                <button type="button" className="nav__btn" onClick={handleRulesClick}>
+            <LayoutElement as="nav" className="panel-nav" id="shortcuts" layout={layout} elements={elements}>
+              {PR.rulesEnabled !== false && blockVisible('rules') && (
+                <button type="button" className="nav__btn" onClick={(event) => { modalFocusRef.current.rules = event.currentTarget; handleRulesClick(); }}>
                   <IconInfo className="nav__btn-icon" size={18} />
                   {editableText.rules}
                 </button>
               )}
-              {PR.changelogsEnabled !== false && (
-                <button type="button" className="nav__btn" onClick={handleChangelogsClick}>
+              {PR.changelogsEnabled !== false && blockVisible('news') && (
+                <button type="button" className="nav__btn" onClick={(event) => { modalFocusRef.current.news = event.currentTarget; handleChangelogsClick(); }}>
                   <IconDocument className="nav__btn-icon" size={18} />
                   {editableText.changelogs}
                 </button>
               )}
-              {PR.keybindsEnabled !== false && (
-                <button type="button" className="nav__btn" onClick={handleKeybindsClick}>
+              {PR.keybindsEnabled !== false && blockVisible('keys') && (
+                <button type="button" className="nav__btn" onClick={(event) => { modalFocusRef.current.keys = event.currentTarget; handleKeybindsClick(); }}>
                   <IconKeyboard className="nav__btn-icon" size={18} />
                   {editableText.keybinds}
                 </button>
               )}
-            </nav>
+            </LayoutElement>
           </div>
         </div>
       </main>
 
-      {PR.staffEnabled !== false && PR.staffCarouselEnabled !== false && staffList.length > 0 && (
-        <aside className="staff-strip" aria-label={editableText.staff}>
-          <div className="staff-strip__label">{editableText.staff}</div>
-          <div className="staff-strip__viewport">
-            <div
-              className="staff-strip__track"
-              style={{ transform: `translateX(-${staffIndex * 100}%)` }}
-            >
-              {staffList.map((entry, i) => (
-                <div key={`${entry.name}-${i}`} className="staff-strip__slide">
-                  <div className="staff-strip__photo">
-                    {entry.photo ? (
-                      <img src={entry.photo} alt="" referrerPolicy="no-referrer" />
-                    ) : (
-                      <span>{(entry.name || '?').slice(0, 2).toUpperCase()}</span>
-                    )}
-                  </div>
-                  <div className="staff-strip__text">
-                    <strong>{entry.name || editableText.staff}</strong>
-                    <span>{entry.role || editableText.serverTeam}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
+      <div className="screen-footer" {...layoutProps("footer", layout, elements)}>{footerText}</div>
+      {PR.staffEnabled !== false && staffList.length > 0 && (
+        <button type="button" className="staff-strip" aria-label={editableText.staff}
+          aria-haspopup={blockVisible('team') ? 'dialog' : undefined} aria-disabled={!blockVisible('team')} {...layoutProps("teamCard", layout, elements)} onClick={(event) => {
+            if (!blockVisible('team')) return;
+            modalFocusRef.current.team = event.currentTarget;
+            setStaffIndex(currentStaffIndex);
+            setShowStaff(true);
+          }}>
+          <span className="staff-strip__label">{editableText.staff}</span>
+          <span className="staff-strip__viewport">
+            <span key={currentStaffIndex} className="staff-strip__slide">
+              <span className="staff-strip__photo">
+                {currentStaff.photo ? (
+                  <img src={currentStaff.photo} alt="" referrerPolicy="no-referrer" />
+                ) : (
+                  <span>{(currentStaff.name || '?').slice(0, 2).toUpperCase()}</span>
+                )}
+              </span>
+              <span className="staff-strip__text">
+                <strong>{currentStaff.name || editableText.staff}</strong>
+                <span>{currentStaff.role || editableText.serverTeam}</span>
+              </span>
+            </span>
+          </span>
+        </button>
       )}
 
       {showMusicWidget && (
-        <aside className="music-widget-wrap">
+        <aside className="music-widget-wrap" {...layoutProps("audio", layout, elements)}>
           <MusicWidget
             tracks={hasValidMusic ? PR.musicTracks : []}
-            volume={ytVolume}
+            volume={mediaVolume}
             isYtVolumeOnly={isVideoVolumeOnly}
             autoplay={PR.musicAutoplay !== false}
+            shuffle={PR.musicShuffle === true}
+            playbackMode={PR.musicSourceMode}
             showCover={PR.musicShowCover !== false}
-            onVolumeChange={(vol) => setYtVolume(vol)}
+            videoVolumeLabel={textVisible('videoVolumeLabel') ? PR.uiText?.videoVolumeLabel : ''}
+            onVolumeChange={(vol) => {
+              if (previewSettings) setPreviewSettings((current) => current && { ...current, musicVolume: vol });
+              else setYtVolume(vol);
+            }}
           />
         </aside>
       )}
 
-      {PR.rulesEnabled !== false && showRules && (
+      {PR.rulesEnabled !== false && blockVisible('rules') && showRules && (
         <div
           className="modal-overlay"
-          role="dialog"
-          aria-label={editableText.rules}
-          onClick={(e) => e.target === e.currentTarget && setShowRules(false)}
+          onClick={(e) => e.target === e.currentTarget && closeModal('rules')}
         >
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-panel__header">
-              <h2 className="modal-panel__title">{editableText.rules}</h2>
-              <button type="button" className="modal-panel__back" onClick={() => setShowRules(false)}>
-                {editableText.back}
-              </button>
-            </div>
+          <div className="modal-panel" role="dialog" aria-modal={activeModal === "rules"}
+            aria-label={editableText.rules} {...layoutProps("rules", layout, elements)}>
+            <ModalHeader title={editableText.rules} closeLabel={editableText.close} onClose={() => closeModal('rules')} />
             <ul className="modal-list">
               {(PR.rules || []).map((rule, i) => (
                 <li key={i}>{rule}</li>
@@ -652,20 +847,14 @@ function App() {
         </div>
       )}
 
-      {PR.changelogsEnabled !== false && showChangelogs && (
+      {PR.changelogsEnabled !== false && blockVisible('news') && showChangelogs && (
         <div
           className="modal-overlay"
-          role="dialog"
-          aria-label={editableText.changelogs}
-          onClick={(e) => e.target === e.currentTarget && setShowChangelogs(false)}
+          onClick={(e) => e.target === e.currentTarget && closeModal('news')}
         >
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-panel__header">
-              <h2 className="modal-panel__title">{editableText.changelogs}</h2>
-              <button type="button" className="modal-panel__back" onClick={() => setShowChangelogs(false)}>
-                {editableText.back}
-              </button>
-            </div>
+          <div className="modal-panel" role="dialog" aria-modal={activeModal === "news"}
+            aria-label={editableText.changelogs} {...layoutProps("news", layout, elements)}>
+            <ModalHeader title={editableText.changelogs} closeLabel={editableText.close} onClose={() => closeModal('news')} />
             <div className="changelogs-list">
               {(PR.changelogs || []).map((entry, i) => (
                 <div key={i} className="changelogs-entry">
@@ -685,28 +874,21 @@ function App() {
         </div>
       )}
 
-      {PR.keybindsEnabled !== false && showKeybinds && (
+      {PR.keybindsEnabled !== false && blockVisible('keys') && showKeybinds && (
         <div
           className="modal-overlay"
-          role="dialog"
-          aria-label={editableText.keybinds}
-          onClick={(e) => e.target === e.currentTarget && setShowKeybinds(false)}
+          onClick={(e) => e.target === e.currentTarget && closeModal('keys')}
         >
-          <div className="keybinds-panel modal-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="keybinds-panel__header modal-panel__header">
-              <h2 className="keybinds-panel__title modal-panel__title">{editableText.keybinds}</h2>
-              <button
-                type="button"
-                className="keybinds-panel__back modal-panel__back"
-                onClick={() => setShowKeybinds(false)}
-              >
-                {editableText.back}
-              </button>
+          <div className="keybinds-panel modal-panel" role="dialog" aria-modal={activeModal === "keys"}
+            aria-label={editableText.keybinds} {...layoutProps("keys", layout, elements)}>
+            <ModalHeader title={editableText.keybinds} closeLabel={editableText.close} onClose={() => closeModal('keys')} />
+            <div className="keyboard-scroller" tabIndex={0} aria-label={editableText.keybinds}>
+              <Keyboard keys={PR.keys} onKeyClick={(id, info) => {
+                if (!blockVisible('keyDetail')) return;
+                modalFocusRef.current.keyDetail = document.activeElement;
+                setKeybindDialog({ id, info });
+              }} />
             </div>
-            <Keyboard
-              keys={PR.keys}
-              onKeyClick={(id, info) => setKeybindDialog({ id, info })}
-            />
             {PR.keybinds && PR.keybinds.length > 0 && (
               <div className="keybinds-list-wrap">
                 <ul className="keybinds-list">
@@ -726,66 +908,33 @@ function App() {
                 </ul>
               </div>
             )}
-            {keybindDialog && (
-              <div
-                className="keybind-dialog-overlay"
-                role="dialog"
-                aria-label="Keybind"
-                onClick={() => setKeybindDialog(null)}
-              >
-                <div
-                  className="keybind-dialog modal-panel"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="keybind-dialog__header">
-                    <kbd className="keybind-dialog__key">{keybindDialog.id}</kbd>
-                    <button
-                      type="button"
-                      className="keybind-dialog__close"
-                      onClick={() => setKeybindDialog(null)}
-                      aria-label="Close"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <p className="keybind-dialog__desc">
-                    {keybindDialog.info || editableText.noKeybind}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
 
-      {PR.staffEnabled !== false && showStaff && (() => {
-        const staffList = (PR.staff || []).map((entry) => {
-          if (typeof entry === 'string') return { name: entry, role: '', photo: '' };
-          return {
-            name: entry.name || entry.role || '',
-            role: entry.role || '',
-            photo: entry.photo || '',
-          };
-        });
+      {PR.keybindsEnabled !== false && blockVisible('keys') && blockVisible('keyDetail') && showKeybinds && keybindDialog && (
+        <div className="keybind-dialog-overlay" onClick={(event) => {
+          if (event.target === event.currentTarget) closeModal('keyDetail');
+        }}>
+          <div className="keybind-dialog modal-panel" role="dialog" aria-modal="true"
+            aria-label={keybindDialog.id} {...layoutProps("keyDetail", layout, elements)}>
+            <ModalHeader title={keybindDialog.id} closeLabel={editableText.close} onClose={() => closeModal('keyDetail')} />
+            <p className="keybind-dialog__desc">{(previewSettings ? PR.keys[keybindDialog.id]?.info : keybindDialog.info) || editableText.noKeybind}</p>
+          </div>
+        </div>
+      )}
+
+      {PR.staffEnabled !== false && blockVisible('team') && showStaff && (() => {
         const hasMultiple = staffList.length > 1;
         return (
-          <div
-            className="modal-overlay"
-            role="dialog"
-            aria-label={editableText.staff}
-            onClick={(e) => e.target === e.currentTarget && setShowStaff(false)}
-          >
-            <div className="modal-panel staff-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-panel__header">
-                <h2 className="modal-panel__title">{editableText.staff}</h2>
-                <button type="button" className="modal-panel__back" onClick={() => setShowStaff(false)}>
-                  {editableText.back}
-                </button>
-              </div>
+          <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeModal('team')}>
+            <div className="modal-panel staff-modal" role="dialog" aria-modal="true"
+              aria-label={editableText.staff} {...layoutProps("team", layout, elements)}>
+              <ModalHeader title={editableText.staff} closeLabel={editableText.close} onClose={() => closeModal('team')} />
               <div className="staff-slider">
                 <div
                   className="staff-slider__track"
-                  style={{ transform: `translateX(-${staffIndex * 100}%)` }}
+                  style={{ transform: `translateX(-${currentStaffIndex * 100}%)` }}
                 >
                   {staffList.map((entry, i) => (
                     <div key={i} className="staff-slider__slide">
@@ -835,7 +984,7 @@ function App() {
                         <button
                           key={i}
                           type="button"
-                          className={`staff-slider__dot ${i === staffIndex ? 'staff-slider__dot--active' : ''}`}
+                          className={`staff-slider__dot ${i === currentStaffIndex ? 'staff-slider__dot--active' : ''}`}
                           onClick={() => setStaffIndex(i)}
                           aria-label={`Go to staff ${i + 1}`}
                         />
@@ -848,6 +997,16 @@ function App() {
           </div>
         );
       })()}
+      {previewSettings && (
+        <Suspense fallback={null}>
+          <PreviewEditor settings={previewSettings} unsavedOnOpen={unsavedOnOpen} scene={layoutScene} onScene={selectLayoutScene} onCancel={closePreview}
+            onChange={(patch) => setPreviewSettings((current) => ({ ...current, ...patch }))}
+            onApply={saveVisualConfig}
+            onPreviewVideo={setPreviewVideoIndex}
+            onPreviewStaff={(index) => { selectLayoutScene('team'); setStaffIndex(index); }}
+            onPreviewKey={(id) => { selectLayoutScene('keyDetail'); setKeybindDialog({ id }); }} />
+        </Suspense>
+      )}
     </div>
   );
 }

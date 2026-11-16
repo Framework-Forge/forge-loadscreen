@@ -24,10 +24,6 @@ RegisterNUICallback('forgeLoadscreenSaveConfig', function(data, cb)
     end
 
     local ok, result = pr_lib.callback.await('forge-loadscreen:server:plugin:saveConfig', 8000, data or {})
-    if ok == true and result then
-        SendNUIMessage({ action = 'updateConfig', config = result })
-    end
-
     cb({ ok = ok == true, data = result, error = ok == true and nil or result })
 end)
 

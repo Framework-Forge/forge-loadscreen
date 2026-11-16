@@ -1,28 +1,28 @@
-# Editor da Forge Loadscreen
+# Editor do Forge Loadscreen
 
-O comando `/adminloadscreen` abre o editor nativo de contextos do PRLib (`pr_lib.menu.RegisterContext`). Não utiliza ox_lib. O editor cobre os 160 valores presentes no `config.json` atual, incluindo opções compartilhadas que são sincronizadas para compatibilidade.
+Abra **/adminloadscreen** para entrar direto no editor visual. A opção **Forge Loadscreen** do Forge Core também abre o editor. O comando **/adminloadscreenmenu** abre o menu clássico, que continua disponível para administradores.
 
-O painel principal **Forge Core** também oferece a opção **Forge Loadscreen**. Quando aberto por esse painel, o botão voltar da raiz do editor retorna ao menu principal da Forge Core, mesmo sendo recursos diferentes. Os submenus continuam voltando ao seu pai dentro do editor. A abertura direta por `/adminloadscreen` permanece independente, sem herdar um pai de uma sessão anterior.
+## Editar em tempo real
 
-Outros recursos podem informar seu contexto pai na chamada local `TriggerEvent('forge-loadscreen:client:openAdminMenu', parentMenu, parentResource)`. Se o recurso não for informado, ele é capturado do chamador antes das verificações assíncronas. A permissão administrativa continua sendo validada pela Forge Loadscreen.
+- **Layout**. Arraste cada bloco na grade. Clique com **Ctrl** ou **Shift**, ou arraste no fundo para selecionar vários. Alinhe, distribua e redimensione o grupo usando as alças. Em **Tela principal e pop-ups**, escolha a janela que quer posicionar.
+- **Bloco**. Clique em um bloco na prévia para editar o conteúdo daquele bloco, a fonte, o tamanho e cor do texto, a opacidade, o fundo e a borda. Curvatura em **0 px** deixa os cantos retos. Use os olhos para mostrar ou ocultar o bloco, o texto, o fundo e a borda. Em **Fundo e borda**, **Efeito de vidro** desfoca o vídeo atrás do bloco. No cartão da equipe, **Filete lateral** mostra uma linha na cor de destaque.
+- **Visibilidade**. Reative blocos ocultos ou acione seções como Regras, Novidades, Teclas, Equipe e Redes sociais.
+- **Identidade e Cores**. Ajuste nome, apresentação, subtítulo, logotipo, rodapé e dica. Escolha Forge, Verde Lima ou Azul Anil, ou ajuste as cores e o degradê manualmente.
+- **Mídia**. Adicione e ordene vídeos e músicas por caminho ou URL. Ajuste volume, fonte de áudio, reprodução, capa, ordem e intervalos. Use **Testar prévia** para clicar nos controles de áudio e nos atalhos com a grade recolhida.
+- **Conteúdo**. Edite regras, versões e suas novidades, teclas e descrições do teclado, equipe, destaques e links.
+- **Geral**. Defina idioma, textos da interface e tempo mínimo. Zero desativa a espera adicional.
 
-## Como usar
+As mudanças ficam no editor até você clicar em **Salvar e aplicar**. A configuração passa pela validação do servidor, grava o `config.json` e fica disponível para as próximas conexões. Você pode continuar editando após salvar. Fechar a prévia descarta as mudanças feitas desde o último salvamento.
 
-1. Depois da atualização dos arquivos, reinicie apenas `forge-loadscreen` em um momento adequado, sem jogadores conectando.
-2. Entre no jogo com permissão administrativa e abra `/adminloadscreen`.
-3. Edite as categorias desejadas. As alterações ficam em um rascunho local.
-4. Use **Pré-visualizar rascunho** para conferir a tela sem gravar. Ao fechar a prévia, o editor reaparece.
-5. Use **Salvar e aplicar** para validar, criar a cópia de segurança, gravar o JSON e publicar a configuração. Em caso de falha de gravação, o rascunho permanece disponível.
-6. **Descartar alterações** exige confirmação e recarrega a configuração salva.
+No JSON, `layout` guarda `x`, `y`, `width` e `height` em porcentagens da tela. `elements` guarda visibilidade e aparência por bloco. `textVisibility` guarda os textos ocultados individualmente. `colors` guarda os valores da paleta e `followGlobalTheme` controla o destaque vindo do Forge Management. Campos visuais omitidos usam os padrões.
 
-Fechar o menu não salva o rascunho. Ele continua disponível ao reabrir durante a mesma execução do recurso. Reiniciar o recurso ou sair do jogo descarta o rascunho local não salvo. A prévia não impõe uma espera de carregamento no jogador.
-
-## Categorias
+## Categorias do menu clássico
 
 | Categoria | Configurações |
 | --- | --- |
 | Seções da tela | Marca, vídeo, música, dica, regras, novidades, teclas, equipe e redes sociais |
 | Informações, identidade e textos | Nomes, slogan, logotipo, marca, idioma, dica, rodapé e cada texto dos botões/progresso |
+| Editar layout e paletas | Posição e tamanho dos elementos e janelas, paletas prontas e destaque global |
 | Paleta de cores | Todas as cores, opacidades e degradê com direção e posições individuais |
 | Vídeo e áudio do fundo | Lista de vídeos, reprodução única ou playlist, ordem aleatória, intervalos, som próprio, música separada ou silêncio |
 | Configurações de música | Faixas, capas, artista, álbum, volume, autoplay, ordem aleatória e reprodução única ou playlist |

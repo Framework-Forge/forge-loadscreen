@@ -5,7 +5,10 @@ local REQUIRED_PERMS = { 'forge-loadscreen.admin', 'forge-management.admin' }
 local writeCooldown = {}
 
 local function canManage(source)
+    source = tonumber(source)
+    if not source or source < 0 then return false end
     if source == 0 then return true end
+    if IsPlayerAceAllowed(source, 'forge-loadscreen.admin') or IsPlayerAceAllowed(source, 'forge-core.admin') then return true end
 
     if GetResourceState('forge-management') == 'started' then
         local ok, allowed = pcall(function()
@@ -25,14 +28,14 @@ local function cleanString(value, fallback, maxLength)
     value = tostring(value):gsub('[%z\1-\8\11\12\14-\31]', '')
     maxLength = maxLength or 160
     if #value > maxLength then
-        value = value:sub(1, maxLength)
+        value = value:sub(1, (utf8.offset(value, 0, maxLength + 1) or maxLength + 1) - 1)
     end
     return value
 end
 
 local function cleanNumber(value, fallback, min, max)
     value = tonumber(value)
-    if not value then value = fallback or 0 end
+    if not value or value ~= value or value == math.huge or value == -math.huge then value = fallback or 0 end
     if min and value < min then value = min end
     if max and value > max then value = max end
     return value
@@ -44,13 +47,14 @@ local function cleanBool(value, fallback)
 end
 
 local function cleanPath(value, fallback, maxLength)
-    value = cleanString(value, fallback or '', maxLength or 260)
+    value = cleanString(value, fallback or '', 2048)
     if value:find('%.%.', 1, false) then return fallback or '' end
+    if value:lower():match('^javascript:') or value:lower():match('^data:') then return fallback or '' end
     return value
 end
 
 local function cleanColor(value, fallback)
-    value = cleanString(value, fallback or '#ffffff', 80)
+    value = cleanString(value, fallback or '#ffffff', 1024)
     if value:match('^#%x%x%x$') or value:match('^#%x%x%x%x%x%x$') then
         return value
     end
@@ -60,7 +64,7 @@ local function cleanColor(value, fallback)
     if value:match('^rgb%(%s*%d+%s*,%s*%d+%s*,%s*%d+%s*%)$') then
         return value
     end
-    if value:match('^linear%-gradient%(') and #value <= 180 then
+    if value:match('^linear%-gradient%(') and value:match('%)$') and not value:find('[^%w#(),%.%%%s%-]') then
         return value
     end
     return fallback or '#ffffff'
@@ -148,6 +152,7 @@ local function cleanUiText(input, current)
         resources = cleanString(input.resources, current.resources or 'recursos', 32),
         remaining = cleanString(input.remaining, current.remaining or 'restantes', 32),
         noKeybind = cleanString(input.noKeybind, current.noKeybind or 'Nenhuma tecla atribuida', 80),
+        videoVolumeLabel = cleanString(input.videoVolumeLabel, current.videoVolumeLabel or 'Volume do vídeo', 60),
         hideUiLabel = cleanString(input.hideUiLabel, current.hideUiLabel or 'Esconder UI', 40),
         showUiLabel = cleanString(input.showUiLabel, current.showUiLabel or 'Mostrar UI', 40),
     }
@@ -158,8 +163,9 @@ local function cleanFeatureCards(input, current)
     input = type(input) == 'table' and input or {}
     current = type(current) == 'table' and current or {}
 
-    for index = 1, 3 do
-        local card = type(input[index]) == 'table' and input[index] or {}
+    for index, value in ipairs(input) do
+        if index > 3 then break end
+        local card = type(value) == 'table' and value or {}
         local old = type(current[index]) == 'table' and current[index] or {}
         result[index] = {
             title = cleanString(card.title, old.title or '', 60),
@@ -196,6 +202,74 @@ local function cleanColors(input, current)
         error = cleanColor(input.error, current.error or '#f87171'),
         gradientAccent = cleanColor(input.gradientAccent, current.gradientAccent or 'linear-gradient(135deg, #ffffff 0%, #ff334f 100%)'),
     }
+end
+
+local layoutElements = {
+    'branding', 'intro', 'title', 'tagline', 'socials', 'features', 'status', 'shortcuts', 'tip',
+    'teamCard', 'audio', 'footer', 'rules', 'news', 'keys', 'keyDetail', 'team',
+}
+local palettePresets = { forge = true, lime = true, indigo = true }
+
+local function cleanLayout(input)
+    local layout = {}
+    if type(input) ~= 'table' then return layout end
+    for _, id in ipairs(layoutElements) do
+        local box = input[id]
+        if type(box) == 'table' and type(box.x) == 'number' and type(box.y) == 'number'
+            and type(box.width) == 'number' and type(box.height) == 'number' then
+            layout[id] = {
+                x = cleanNumber(box.x, 0, 0, 100),
+                y = cleanNumber(box.y, 0, 0, 100),
+                width = cleanNumber(box.width, 1, 1, 100),
+                height = cleanNumber(box.height, 1, 1, 100),
+            }
+        end
+    end
+    return layout
+end
+
+local appearanceFonts = { orbitron = true, rajdhani = true, arial = true, georgia = true, verdana = true, mono = true }
+local appearanceFlags = { 'visible', 'textVisible', 'backgroundEnabled', 'borderEnabled', 'glassEnabled', 'accentLineEnabled' }
+local appearanceColors = { 'backgroundColor', 'borderColor', 'textColor', 'accentColor' }
+local appearanceNumbers = {
+    backgroundOpacity = { 0, 1 }, borderOpacity = { 0, 1 }, textOpacity = { 0, 1 },
+    radius = { 0, 80 }, fontSize = { 8, 240 },
+}
+
+local function cleanAppearance(input)
+    local elements = {}
+    if type(input) ~= 'table' then return elements end
+    for _, id in ipairs(layoutElements) do
+        local value = input[id]
+        if type(value) == 'table' then
+            local style = {}
+            for _, key in ipairs(appearanceFlags) do
+                if type(value[key]) == 'boolean' then style[key] = value[key] end
+            end
+            for _, key in ipairs(appearanceColors) do
+                local color = value[key]
+                if type(color) == 'string' and color:match('^#%x%x%x%x%x%x$') then style[key] = color end
+            end
+            for key, range in pairs(appearanceNumbers) do
+                if type(value[key]) == 'number' then style[key] = cleanNumber(value[key], range[1], range[1], range[2]) end
+            end
+            if type(value.fontFamily) == 'string' and appearanceFonts[value.fontFamily] then style.fontFamily = value.fontFamily end
+            if next(style) then elements[id] = style end
+        end
+    end
+    return elements
+end
+
+local function cleanTextVisibility(input, uiText)
+    local visibility = {}
+    if type(input) ~= 'table' then return visibility end
+    for key in pairs(uiText) do
+        if input[key] == false then visibility[key] = false end
+    end
+    for _, key in ipairs({ 'brand_title', 'brand_subtitle', 'logoUrl' }) do
+        if input[key] == false then visibility[key] = false end
+    end
+    return visibility
 end
 
 local function cleanBackgroundMedia(input, current)
@@ -312,10 +386,19 @@ local function cleanKeybinds(input)
     return result
 end
 
-local function buildKeysFromKeybinds(keybinds)
+local function buildKeysFromKeybinds(keybinds, configured)
     local keys = {}
+    local count = 0
+    for key, value in pairs(type(configured) == 'table' and configured or {}) do
+        if count >= 120 then break end
+        if type(key) == 'string' and #key <= 24 and (type(value) == 'table' or type(value) == 'boolean') then
+            keys[key] = { enabled = type(value) == 'boolean' and value or type(value) == 'table' and value.enabled == true,
+                info = type(value) == 'table' and cleanString(value.info, '', 160) or '' }
+            count = count + 1
+        end
+    end
     for _, bind in ipairs(keybinds or {}) do
-        keys[bind.key] = {
+        keys[bind.key] = keys[bind.key] or {
             enabled = true,
             info = bind.description ~= '' and bind.description or bind.action,
         }
@@ -331,7 +414,14 @@ local function sanitizeConfig(input, current)
     local musicTracks = cleanMusicTracks(input.musicTracks)
     local keybinds = cleanKeybinds(input.keybinds)
 
+    local palettePreset = input.palettePreset
+    if palettePreset == nil then palettePreset = current.palettePreset end
+
     local sanitized = {
+        layout = cleanLayout(input.layout == nil and current.layout or input.layout),
+        elements = cleanAppearance(input.elements == nil and current.elements or input.elements),
+        palettePreset = palettePresets[palettePreset] and palettePreset or '',
+        followGlobalTheme = cleanBool(input.followGlobalTheme, current.followGlobalTheme ~= false),
         BrandingEnabled = cleanBool(input.BrandingEnabled, current.BrandingEnabled ~= false),
         VideoEnabled = cleanBool(input.VideoEnabled, current.VideoEnabled ~= false),
         MusicEnabled = cleanBool(input.MusicEnabled, current.MusicEnabled ~= false),
@@ -362,7 +452,7 @@ local function sanitizeConfig(input, current)
         backgroundAudio = cleanString(input.backgroundAudio or backgroundMedia.audio, 'separate', 24),
         backgroundMode = cleanString(input.backgroundMode or backgroundMedia.mode, 'playlist', 24),
         backgroundMedia = backgroundMedia,
-        videoSource = backgroundMedia.items[1] and backgroundMedia.items[1].src or cleanPath(input.videoSource, current.videoSource or '', 260),
+        videoSource = backgroundMedia.items[1] and backgroundMedia.items[1].src or '',
         videoType = backgroundMedia.items[1] and backgroundMedia.items[1].type or cleanString(input.videoType, current.videoType or 'auto', 16),
         videoMuted = cleanBool(input.videoMuted, current.videoMuted == true),
 
@@ -380,9 +470,12 @@ local function sanitizeConfig(input, current)
         rules = cleanStringArray(input.rules, 80, 220),
         changelogs = cleanChangelogs(input.changelogs),
         keybinds = keybinds,
-        keys = buildKeysFromKeybinds(keybinds),
+        keys = buildKeysFromKeybinds(keybinds, input.keys),
     }
 
+    sanitized.textVisibility = cleanTextVisibility(
+        input.textVisibility == nil and current.textVisibility or input.textVisibility, sanitized.uiText
+    )
     return sanitized
 end
 
@@ -397,14 +490,18 @@ local function saveConfig(source, config)
     local current, err = readConfig()
     if not current then return false, err end
 
+    if type(config) ~= 'table' then return false, 'invalid_config' end
     local sanitized = sanitizeConfig(config, current)
-    local previous = json.encode(current, { indent = true })
-    if previous then
-        SaveResourceFile(RESOURCE, BACKUP_FILE, previous, -1)
+    local ok, previous, encoded = pcall(function()
+        return json.encode(current, { indent = true }), json.encode(sanitized, { indent = true })
+    end)
+    if not ok or not previous or not encoded then return false, 'encode_failed' end
+    local function write(path, bytes)
+        local success, result = pcall(SaveResourceFile, RESOURCE, path, bytes, -1)
+        return success and (result == true or (type(result) == 'number' and result > 0))
     end
-
-    local saved = SaveResourceFile(RESOURCE, CONFIG_FILE, json.encode(sanitized, { indent = true }), -1)
-    if not saved then return false, 'save_failed' end
+    if not write(BACKUP_FILE, previous) then return false, 'backup_failed' end
+    if not write(CONFIG_FILE, encoded) then return false, 'save_failed' end
 
     Config = sanitized
     audit(source, 'forge-loadscreen.config.save', {
@@ -414,9 +511,24 @@ local function saveConfig(source, config)
         language = sanitized.language,
     })
 
-    TriggerClientEvent('forge-loadscreen:client:setRuntimeConfig', -1, sanitized)
-    return true, sanitized
+    local runtimeConfig = ForgeLoadscreenConfigWithTheme and ForgeLoadscreenConfigWithTheme(sanitized) or sanitized
+    TriggerClientEvent('forge-loadscreen:client:setRuntimeConfig', -1, runtimeConfig)
+    local managedColors = runtimeConfig ~= sanitized and runtimeConfig.colors or nil
+    return true, sanitized, managedColors
 end
+
+-- Same validation/persistence for PRLib contexts and the management plugin.
+ForgeLoadscreenConfigService = {
+    CanManage = canManage,
+    Save = function(source, payload)
+        if not canManage(source) then return false, 'no_permission' end
+        if type(payload) ~= 'table' then return false, 'invalid_config' end
+        local now = os.time()
+        if writeCooldown[source] and now - writeCooldown[source] < 2 then return false, 'rate_limited' end
+        writeCooldown[source] = now
+        return saveConfig(source, payload)
+    end,
+}
 
 local activeDownloads = {}
 local downloadStates = {}
@@ -835,28 +947,23 @@ end)
 AddEventHandler('forge-management:server:localeUpdated', function(locale)
     local config = readConfig()
     if type(config) ~= 'table' then return end
+    local previous = loadscreenLocaleText(managementLocaleToLoadscreen(config.language))
     config.language = managementLocaleToLoadscreen(locale)
-    config.uiText = loadscreenLocaleText(config.language)
+    config.uiText = type(config.uiText) == 'table' and config.uiText or {}
+    for name, label in pairs(loadscreenLocaleText(config.language)) do
+        if config.uiText[name] == nil or config.uiText[name] == previous[name] then
+            config.uiText[name] = label
+        end
+    end
     saveConfig(0, config)
 end)
 AddEventHandler('forge-management:server:themeUpdated', function(theme)
-    if type(theme) ~= 'table' or not theme.accentColor then return end
-    local config, err = readConfig()
-    if not config then return end
-    
-    config.colors = config.colors or {}
-    config.colors.accent = theme.accentColor
-    config.colors.border = theme.accentColor
-    
-    local r = tonumber(theme.accentColor:sub(2,3), 16) or 255
-    local g = tonumber(theme.accentColor:sub(4,5), 16) or 122
-    local b = tonumber(theme.accentColor:sub(6,7), 16) or 26
-    
-    config.colors.accentHover = ('rgba(%d, %d, %d, 0.15)'):format(r, g, b)
-    config.colors.accentDim = ('rgba(%d, %d, %d, 0.65)'):format(r, g, b)
-    config.colors.bgCard = ('rgba(%d, %d, %d, 0.40)'):format(r, g, b)
+    if type(theme) ~= 'table' then return end
+    local config = readConfig()
+    if not config or config.followGlobalTheme == false or not ForgeLoadscreenConfigWithTheme then return end
 
-    saveConfig(0, config)
+    local runtimeConfig = ForgeLoadscreenConfigWithTheme(config, theme)
+    if runtimeConfig ~= config then
+        TriggerClientEvent('forge-loadscreen:client:setRuntimeConfig', -1, runtimeConfig)
+    end
 end)
-
-

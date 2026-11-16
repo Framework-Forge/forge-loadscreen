@@ -1,7 +1,7 @@
 -- Native PRLib context editor. Drafts never change the live configuration until save.
 local Admin = {}
 ForgeLoadscreenAdmin = Admin
-local draft, dirty, busy, previewing = nil, false, false, false
+local draft, dirty, busy, previewing, returnToMenu = nil, false, false, false, false
 local rootContext
 local rootId = 'forge_loadscreen:admin'
 local parentMenu, parentResource
@@ -120,14 +120,16 @@ local palettes = {
     {'text','Texto principal'}, {'textMuted','Texto secundário'}, {'success','Sucesso'}, {'error','Erro'},
 }
 
-local function syncMedia()
-    local media = draft.backgroundMedia or {}; draft.backgroundMedia = media
-    media.enabled = draft.VideoEnabled ~= false
-    draft.backgroundAudio, draft.backgroundMode = media.audio or 'separate', media.mode or 'playlist'
-    local first = media.items and media.items[1]
-    draft.videoSource, draft.videoType = first and first.src or '', first and first.type or 'auto'
+local function syncMedia(settings)
+    settings = settings or draft
+    local media = settings.backgroundMedia or {}; settings.backgroundMedia = media
+    media.enabled = settings.VideoEnabled ~= false
+    settings.backgroundAudio, settings.backgroundMode = media.audio or 'separate', media.mode or 'playlist'
+    local first = type(media.items) == 'table' and media.items[1]
+    if type(first) ~= 'table' then first = nil end
+    settings.videoSource, settings.videoType = first and first.src or '', first and first.type or 'auto'
     -- Remove stale normalized aliases supplied by older editors.
-    for _, entry in ipairs(sections) do draft[entry.path[1]:gsub('^%u', string.lower)] = nil end
+    for _, entry in ipairs(sections) do settings[entry.path[1]:gsub('^%u', string.lower)] = nil end
 end
 local function inputRow(spec, value)
     if value == nil then value = spec.default end
@@ -395,17 +397,29 @@ local function duration()
     if result then put({'minimumLoadscreenSeconds'},result[1] and math.max(0,math.min(900,tonumber(result[2]) or 0)) or 0) end
     openRoot()
 end
+local function saveSettings(settings)
+    if busy then return false, 'rate_limited' end
+    busy = true
+    syncMedia(settings)
+    local ok, success, result, managedColors = pcall(
+        pr_lib.callback.await, 'forge-loadscreen:server:saveConfig', 10000, copy(settings)
+    )
+    busy = false
+    if not ok or success ~= true then return false, ok and result or 'save_failed' end
+
+    draft = copy(result)
+    dirty = false
+    if managedColors then result.colors = managedColors end
+    ForgeLoadscreenRuntime.Apply(result)
+    ForgeLoadscreenRuntime.Publish()
+    return true, draft
+end
+
 local function save()
-    if busy then return end
-    busy=true;syncMedia()
-    local ok,success,result=pcall(pr_lib.callback.await,'forge-loadscreen:server:saveConfig',10000,copy(draft))
-    busy=false
-    if ok and success==true then
-        draft=copy(result);dirty=false
-        ForgeLoadscreenRuntime.Apply(result);ForgeLoadscreenRuntime.Publish()
+    local saved, reason = saveSettings(draft)
+    if saved then
         notify('Configuração salva e aplicada.','success')
     else
-        local reason=ok and result or success
         local messages={no_permission='sem permissão',rate_limited='aguarde dois segundos e tente novamente',
             backup_failed='não foi possível criar a cópia de segurança',save_failed='não foi possível gravar o arquivo',
             invalid_config='configuração inválida',config_service_unavailable='serviço de configuração indisponível'}
@@ -414,7 +428,7 @@ local function save()
     openRoot()
 end
 local function reload()
-    local config,err=pr_lib.callback.await('forge-loadscreen:server:getConfig',10000)
+    local config,err=pr_lib.callback.await('forge-loadscreen:server:getConfig',10000,true)
     if type(config)~='table' then notify('Falha ao carregar: '..tostring(err),'error');return false end
     draft=copy(config)
     for key,value in pairs(draft.keys or {}) do
@@ -428,7 +442,7 @@ openRoot = function()
         {title=dirty and 'Alterações não salvas' or 'Configuração carregada',description='Edite o rascunho e use Salvar e aplicar. A prévia não grava o JSON.',readOnly=true,icon='circle-info'},
         option('Seções da tela','Ativar e desativar cada parte',function() openFields('forge_loadscreen:sections','Seções',sections) end,'toggle-on'),
         option('Informações, identidade e textos','Nome, marca, logotipo, idioma, dica e rodapé',function() openFields('forge_loadscreen:identity','Informações e textos',identity) end,'font'),
-        option('Paleta de cores','Cores, transparência e degradê',openPalette,'palette'),
+        option('Paleta de cores','Edição manual de cores, transparência e degradê',openPalette,'palette'),
         option('Vídeo e áudio do fundo','Ativação, som, ordem, intervalo e modo',function() openFields('forge_loadscreen:video','Reprodução do fundo',videoFields) end,'video'),
         option('Configurações de música','Volume, início automático, capas e ordem',function() openFields('forge_loadscreen:music','Reprodução de músicas',musicFields) end,'music'),
         option('Tempo mínimo de carregamento',tostring(draft.minimumLoadscreenSeconds or 0)..' segundos (0 = sem espera extra)',duration,'clock'),
@@ -438,8 +452,15 @@ openRoot = function()
         option('Novidades e versões','Versões e suas linhas de novidades',function() openList('changelogs') end,'file-lines'),
         option('Cartões informativos','Título, descrição e ícone de até três cartões',function() openList('features') end,'rectangle-list'),
         option('Redes sociais e site','Links públicos da comunidade',function() openFields('forge_loadscreen:social','Redes sociais',socials) end,'share-nodes'),
+        option('Editar layout e paletas','Reposicione e redimensione os elementos na prévia',function()
+            syncMedia()
+            previewing=true
+            returnToMenu=true
+            menus().HideContext(false)
+            ForgeLoadscreenRuntime.Preview(copy(draft), true, dirty)
+        end,'arrows-up-down-left-right'),
         option('Pré-visualizar rascunho','Mostra as alterações sem gravar o arquivo',function()
-            syncMedia();previewing=true;menus().HideContext(false);ForgeLoadscreenRuntime.Preview(copy(draft))
+            syncMedia();previewing=true;returnToMenu=true;menus().HideContext(false);ForgeLoadscreenRuntime.Preview(copy(draft))
         end,'eye'),
         option('Salvar e aplicar','Grava o JSON pelo servidor, após validar a permissão',save,'floppy-disk'),
         option('Descartar alterações','Recarrega o arquivo salvo; exige confirmação',function()
@@ -458,8 +479,47 @@ function Admin.Open(menu, resource)
     if dirty and draft then openRoot();return end
     if reload() then openRoot() end
 end
+function Admin.OpenVisual()
+    if busy or previewing then return end
+    if pr_lib.callback.await('forge-loadscreen:server:canManage', 10000) ~= true then
+        notify('Sem permissão para configurar a loadscreen.', 'error')
+        return
+    end
+    if not (dirty and draft) and not reload() then return end
+    syncMedia()
+    previewing = true
+    returnToMenu = false
+    menus().HideContext(false)
+    ForgeLoadscreenRuntime.Preview(copy(draft), true, dirty)
+end
+
+function Admin.SavePreview(settings)
+    if not previewing or type(settings) ~= 'table' or type(settings.layout) ~= 'table'
+        or type(settings.elements) ~= 'table' or type(settings.colors) ~= 'table'
+        or type(settings.backgroundMedia) ~= 'table' or type(settings.keybinds) ~= 'table' then
+        return false, 'invalid_config'
+    end
+    return saveSettings(settings)
+end
+
+function Admin.ApplyPreview(settings)
+    if not previewing or not draft or type(settings) ~= 'table' then return false end
+    if type(settings.layout) ~= 'table' or type(settings.colors) ~= 'table'
+        or type(settings.palettePreset) ~= 'string' or type(settings.followGlobalTheme) ~= 'boolean' then
+        return false
+    end
+    put({'layout'}, copy(settings.layout))
+    put({'colors'}, copy(settings.colors))
+    put({'palettePreset'}, settings.palettePreset)
+    put({'followGlobalTheme'}, settings.followGlobalTheme)
+    return true
+end
+
 AddEventHandler('forge-loadscreen:client:previewClosed',function()
-    if previewing then previewing=false;openRoot() end
+    if not previewing then return end
+    previewing = false
+    if returnToMenu then openRoot() end
+    returnToMenu = false
 end)
 -- Schema is local to this resource and used by the offline coverage test.
 Admin.Schema={identity=identity,texts=texts,sections=sections,socials=socials,links=links,

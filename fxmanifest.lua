@@ -21,17 +21,20 @@ server_scripts {
 
 client_scripts {
   'client.lua',
+  'client/admin_menu.lua',
   'client/forge_plugin.lua',
 }
 
 -- Point to your built files. Run: cd ui && npm run build
-loadscreen 'ui/dist/index.html'
+loadscreen 'ui/dist/loading.html'
 ui_page 'ui/dist/index.html'
 loadscreen_cursor 'yes'
 -- Manual shutdown: client.lua sends progress with SendLoadingScreenMessage() and closes with ShutdownLoadingScreenNui().
 loadscreen_manual_shutdown 'yes'
 
 files {
+  'config.json',
+  'ui/dist/loading.html',
   'ui/dist/index.html',
   'ui/dist/assets/**/*',
   'ui/dist/images/**/*',

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { nextPlaybackIndex } from '../playback';
 
 const DEFAULT_TRACKS = [];
 const YOUTUBE_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
@@ -50,9 +51,15 @@ export default function MusicWidget({
   isYtVolumeOnly = false,
   autoplay = true,
   showCover = true,
+  videoVolumeLabel = 'Volume do vídeo',
+  shuffle = false,
+  playbackMode = 'playlist',
   onVolumeChange = null,
 }) {
-  const validTracks = useMemo(() => tracks.filter((track) => track?.src), [tracks]);
+  const validTracks = useMemo(() => {
+    const available = tracks.filter((track) => track?.src);
+    return playbackMode === 'single' ? available.slice(0, 1) : available;
+  }, [tracks, playbackMode]);
   const [isPlaying, setIsPlaying] = useState(() => autoplay && validTracks.length > 0);
   const [volume, setVolume] = useState(initialVolume);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -91,7 +98,7 @@ export default function MusicWidget({
     if (isYtVolumeOnly || currentType !== 'audio' || !currentTrack?.src) return;
     const audio = audioRef.current;
     if (!audio) return;
-    audio.src = currentTrack.src;
+    if (audio.getAttribute('src') !== currentTrack.src) audio.src = currentTrack.src;
     audio.volume = volume;
     if (isPlaying) audio.play().catch(() => setIsPlaying(false));
     else audio.pause();
@@ -136,7 +143,7 @@ export default function MusicWidget({
           playsinline: 1,
           modestbranding: 1,
           iv_load_policy: 3,
-          loop: 1,
+          loop: playbackMode === 'single' ? 1 : 0,
           playlist: currentVideoId,
           origin: window.location.origin || 'https://www.youtube.com',
         },
@@ -194,7 +201,7 @@ export default function MusicWidget({
         setIsYtReady(false);
       }
     };
-  }, [currentVideoId, currentType]);
+  }, [currentVideoId, currentType, shuffle, playbackMode]);
 
   // Sync YouTube player play/pause state
   useEffect(() => {
@@ -247,12 +254,19 @@ export default function MusicWidget({
 
   const next = () => {
     if (!validTracks.length) return;
-    setCurrentIndex((i) => (i + 1) % validTracks.length);
+    if (validTracks.length === 1) {
+      if (audioRef.current && currentType === 'audio') {
+        audioRef.current.currentTime = 0;
+        if (isPlaying) audioRef.current.play().catch(() => setIsPlaying(false));
+      }
+      return;
+    }
+    setCurrentIndex((i) => nextPlaybackIndex(i, validTracks.length, shuffle));
   };
 
   const prev = () => {
     if (!validTracks.length) return;
-    setCurrentIndex((i) => (i - 1 + validTracks.length) % validTracks.length);
+    setCurrentIndex((i) => shuffle ? nextPlaybackIndex(i, validTracks.length, true) : (i - 1 + validTracks.length) % validTracks.length);
   };
 
   const onTimeUpdate = () => {
@@ -265,12 +279,12 @@ export default function MusicWidget({
     return (
       <div className="music-widget music-widget--compact">
         <div className="music-widget__header">
-          <span className="music-widget__label">Volume do video</span>
+          <span className="music-widget__label">{videoVolumeLabel}</span>
         </div>
         <div className="music-widget__volume">
           <VolumeIcon />
           <input
-            type="range" min="0" max="1" step="0.05" value={volume}
+            type="range" min="0" max="1" step="0.01" value={volume}
             onChange={(e) => setWidgetVolume(parseFloat(e.target.value))}
             className="music-widget__volume-slider" aria-label="Volume"
           />
@@ -350,7 +364,7 @@ export default function MusicWidget({
       <div className="music-widget__volume">
         <VolumeIcon />
         <input
-          type="range" min="0" max="1" step="0.05" value={volume}
+          type="range" min="0" max="1" step="0.01" value={volume}
           onChange={(e) => setWidgetVolume(parseFloat(e.target.value))}
           className="music-widget__volume-slider" aria-label="Volume"
         />

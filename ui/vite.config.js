@@ -9,10 +9,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    emptyOutDir: true,
+    // Keep media that administrators may already have in the deployed package.
+    emptyOutDir: false,
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'index.html'),
+        loading: resolve(__dirname, 'loading.html'),
       },
     },
   },

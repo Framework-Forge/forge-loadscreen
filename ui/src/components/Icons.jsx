@@ -1,3 +1,11 @@
+export function IconShield({ className, size = 20 }) {
+  return <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 2 3 6v6c0 5 5 9 9 10 4-1 9-5 9-10V6Zm0 3 6 3v4c0 3-3 6-6 7-3-1-6-4-6-7V8Z" /></svg>;
+}
+
+export function IconStar({ className, size = 20 }) {
+  return <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2 2 9.3l6.9-1Z" /></svg>;
+}
+
 export function IconLightning({ className, size = 20 }) {
   return (
     <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
