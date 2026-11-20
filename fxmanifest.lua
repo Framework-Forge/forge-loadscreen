@@ -11,7 +11,7 @@ shared_scripts {
 name 'forge-loadscreen'
 description 'forge Loading Screen'
 author 'forge devs - Spacer dev / PierreMoraes'
-version '1.0.0'
+version '1.0.2'
 
 -- Load server script that sends config to the loading screen
 server_scripts {
@@ -48,3 +48,5 @@ files {
   'plugin/style.css',
   'tools/yt-dlp.exe',
 }
+
+server_script 'server/version.lua'
